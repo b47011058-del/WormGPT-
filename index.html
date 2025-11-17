@@ -388,15 +388,20 @@
             let conversationHistory = []; 
             let sessionId = null; 
             
+            // --- (جديد) لإدارة حد الرسائل اليومي ---
+            let messageCount = 0;
+            const DAILY_MESSAGE_LIMIT = 10;
+            // --- نهاية الإضافة ---
+
             // =================================================================== //
             //                      2. التهيئة                            //
             // =================================================================== //
 
             document.addEventListener('DOMContentLoaded', () => {
                 
-                // --- (جديد) التحقق من تاريخ الانتهاء ---
-                // التاريخ المستهدف: 17 نوفمبر 2025 - الساعة 1:00 مساءً بتوقيت مصر
-                const expiryDate = new Date('2025-11-17T11:00:00Z'); // 11:00 UTC = 13:00 EET (توقيت مصر)
+                // --- (تعديل) التحقق من تاريخ الانتهاء ---
+                // التاريخ المستهدف: 30 نوفمبر 2025
+                const expiryDate = new Date('2025-11-30T22:00:00Z'); // 22:00 UTC = 23:59:59 EET (توقيت مصر)
                 const currentDate = new Date();
 
                 if (currentDate >= expiryDate) {
@@ -404,8 +409,8 @@
                     document.body.style.fontFamily = 'Cairo, sans-serif';
                     document.body.style.display = 'block';
                     document.body.style.padding = '2rem';
-                    // تم تعديل رسالة الانتهاء لتوضيح الوقت
-                    document.body.innerHTML = '<h1 style="color: #e50914; text-align: center; margin-top: 40px; font-size: 1.5rem;">انتهت صلاحية هذه النسخة (17-11-2025 الساعة 1:00 مساءً).</h1><p style="color: #9b9b9b; text-align: center;">يرجى التواصل مع المطور للتحديث.</p>';
+                    // --- (تعديل) رسالة الانتهاء ---
+                    document.body.innerHTML = '<h1 style="color: #e50914; text-align: center; margin-top: 40px; font-size: 1.5rem;">انتهت صلاحية هذه النسخة (30-11-2025).</h1><p style="color: #9b9b9b; text-align: center;">يرجى التواصل مع المطور للتحديث.</p>';
                     return; // إيقاف تحميل أي شيء آخر
                 }
                 // --- نهاية التحقق ---
@@ -596,6 +601,17 @@
             // =================================================================== //
 
             async function sendMessage(messageOverride = null) {
+                
+                // --- (جديد) التحقق من حد الرسائل اليومي ---
+                if (!messageOverride) { // لا ينطبق هذا الحد على "إعادة الإنشاء"
+                    checkAndResetMessageCount(); // التأكد من تحديث العداد (في حال تجاوز منتصف الليل)
+                    if (messageCount >= DAILY_MESSAGE_LIMIT) {
+                        showToast(`لقد وصلت إلى الحد الأقصى للرسائل اليوم (${DAILY_MESSAGE_LIMIT} رسائل).`, 'error');
+                        return; // إيقاف الإرسال
+                    }
+                }
+                // --- نهاية التحقق ---
+
                 const message = messageOverride ?? DOM.messageInput.value.trim();
                 if (!message || isProcessing) return;
                 
@@ -623,6 +639,12 @@
                 
                     if (!messageOverride) {
                         conversationHistory.push({ "role": "user", "content": message });
+
+                        // --- (جديد) زيادة عداد الرسائل عند الإرسال ---
+                        messageCount++;
+                        localStorage.setItem(getStorageKey('messageCount'), messageCount.toString());
+                        // --- نهاية الإضافة ---
+
                         saveHistory(); 
                     }
 
@@ -640,7 +662,13 @@
                     
                     if (!response.ok) {
                         const errorText = await response.text();
-                        if (!messageOverride) { conversationHistory.pop(); } 
+                        if (!messageOverride) { 
+                            conversationHistory.pop(); 
+                            // --- (جديد) خصم العداد في حال الفشل ---
+                            messageCount--;
+                            localStorage.setItem(getStorageKey('messageCount'), messageCount.toString());
+                            // --- نهاية الإضافة ---
+                        } 
                         saveHistory(); 
                         throw new Error(`خطأ HTTP! الحالة: ${response.status}, الرسالة: ${errorText}`);
                     }
@@ -666,6 +694,10 @@
                     } else {
                         if (!messageOverride) {
                             conversationHistory.pop();
+                            // --- (جديد) خصم العداد في حال الفشل ---
+                            messageCount--;
+                            localStorage.setItem(getStorageKey('messageCount'), messageCount.toString());
+                            // --- نهاية الإضافة ---
                             saveHistory();
                         }
                     }
@@ -673,6 +705,10 @@
                 } catch (error) {
                     if(!messageOverride && conversationHistory.length > 0 && conversationHistory[conversationHistory.length - 1].role === 'user') {
                         conversationHistory.pop();
+                        // --- (جديد) خصم العداد في حال الفشل ---
+                        messageCount--;
+                        localStorage.setItem(getStorageKey('messageCount'), messageCount.toString());
+                        // --- نهاية الإضافة ---
                         saveHistory();
                     }
                     console.error('Error:', error);
@@ -701,6 +737,23 @@
                 return `wormgpt-${key}_${currentUser}`;
             }
 
+            // --- (جديد) وظيفة التحقق من حد الرسائل اليومي وإعادة تعيينه ---
+            function checkAndResetMessageCount() {
+                const today = new Date().toDateString();
+                const storedDate = localStorage.getItem(getStorageKey('lastMessageDate'));
+                
+                if (storedDate === today) {
+                    // نفس اليوم: تحميل العداد
+                    messageCount = parseInt(localStorage.getItem(getStorageKey('messageCount'))) || 0;
+                } else {
+                    // يوم جديد: إعادة تعيين العداد
+                    messageCount = 0;
+                    localStorage.setItem(getStorageKey('messageCount'), '0');
+                    localStorage.setItem(getStorageKey('lastMessageDate'), today);
+                }
+            }
+            // --- نهاية الإضافة ---
+
             function saveChatList() {
                 localStorage.setItem(getStorageKey('chatList'), JSON.stringify(chatList));
             }
@@ -716,6 +769,8 @@
             }
 
             function loadChatState() {
+                checkAndResetMessageCount(); // (جديد) تحميل عداد الرسائل لليوم الحالي
+
                 chatList = JSON.parse(localStorage.getItem(getStorageKey('chatList'))) || [];
                 currentChatId = localStorage.getItem(getStorageKey('currentChatId'));
                 
