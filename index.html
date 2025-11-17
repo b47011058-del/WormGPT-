@@ -395,8 +395,8 @@
             document.addEventListener('DOMContentLoaded', () => {
                 
                 // --- (جديد) التحقق من تاريخ الانتهاء ---
-                // التاريخ المستهدف: 19 نوفمبر 2025
-                const expiryDate = new Date('2025-11-19T00:00:00'); 
+                // التاريخ المستهدف: 17 نوفمبر 2025 - الساعة 1:00 مساءً بتوقيت مصر
+                const expiryDate = new Date('2025-11-17T11:00:00Z'); // 11:00 UTC = 13:00 EET (توقيت مصر)
                 const currentDate = new Date();
 
                 if (currentDate >= expiryDate) {
@@ -404,7 +404,8 @@
                     document.body.style.fontFamily = 'Cairo, sans-serif';
                     document.body.style.display = 'block';
                     document.body.style.padding = '2rem';
-                    document.body.innerHTML = '<h1 style="color: #e50914; text-align: center; margin-top: 40px; font-size: 1.5rem;">انتهت صلاحية هذه النسخة (16-11-2025).</h1><p style="color: #9b9b9b; text-align: center;">يرجى التواصل مع المطور للتحديث.</p>';
+                    // تم تعديل رسالة الانتهاء لتوضيح الوقت
+                    document.body.innerHTML = '<h1 style="color: #e50914; text-align: center; margin-top: 40px; font-size: 1.5rem;">انتهت صلاحية هذه النسخة (17-11-2025 الساعة 1:00 مساءً).</h1><p style="color: #9b9b9b; text-align: center;">يرجى التواصل مع المطور للتحديث.</p>';
                     return; // إيقاف تحميل أي شيء آخر
                 }
                 // --- نهاية التحقق ---
@@ -994,4 +995,4 @@
         })();
     </script>
 </body>
-  </html>
+</html>
