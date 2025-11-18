@@ -382,26 +382,24 @@
             let isRecording = false;
             let recognition;
             
-            let currentUser = null;
+            let currentUser = null; // --- (تعديل) سيتم تعيين هذا إلى IP المستخدم ---
             let currentChatId = null;
             let chatList = []; 
             let conversationHistory = []; 
             let sessionId = null; 
             
-            // --- (جديد) لإدارة حد الرسائل اليومي ---
+            // --- لإدارة حد الرسائل اليومي ---
             let messageCount = 0;
             const DAILY_MESSAGE_LIMIT = 10;
-            // --- نهاية الإضافة ---
-
+            
             // =================================================================== //
             //                      2. التهيئة                            //
             // =================================================================== //
 
-            document.addEventListener('DOMContentLoaded', () => {
+            // --- (تعديل) تم تحويل الدالة إلى async لانتظار جلب IP ---
+            document.addEventListener('DOMContentLoaded', async () => {
                 
-                // --- (تعديل) التحقق من تاريخ الانتهاء ---
-                // التاريخ المستهدف: 30 نوفمبر 2025
-                const expiryDate = new Date('2025-11-30T22:00:00Z'); // 22:00 UTC = 23:59:59 EET (توقيت مصر)
+                const expiryDate = new Date('2025-11-30T22:00:00Z');
                 const currentDate = new Date();
 
                 if (currentDate >= expiryDate) {
@@ -409,12 +407,10 @@
                     document.body.style.fontFamily = 'Cairo, sans-serif';
                     document.body.style.display = 'block';
                     document.body.style.padding = '2rem';
-                    // --- (تعديل) رسالة الانتهاء ---
                     document.body.innerHTML = '<h1 style="color: #e50914; text-align: center; margin-top: 40px; font-size: 1.5rem;">انتهت صلاحية هذه النسخة (30-11-2025).</h1><p style="color: #9b9b9b; text-align: center;">يرجى التواصل مع المطور للتحديث.</p>';
-                    return; // إيقاف تحميل أي شيء آخر
+                    return;
                 }
-                // --- نهاية التحقق ---
-
+                
                 const ids = [
                     'html', 'chat-wrapper', 'chat-container', 'chat-box', 'welcome-message', 
                     'input-area', 'message-input', 'send-button', 'new-chat-button', 
@@ -427,7 +423,9 @@
                 setupEventListeners();
                 setupActionButtonsListener(); 
                 autoResizeTextarea();
-                checkLoginState(); 
+                
+                // --- (تعديل) انتظار التحقق من IP قبل إكمال التحميل ---
+                await checkUserState();
                 
                 DOM.sendButton.disabled = true;
                 
@@ -496,20 +494,44 @@
             
             function showScreen(screenName) {
                 if (screenName === 'chat') {
-                    // The chat wrapper is hidden by default, this makes it visible.
                     DOM.chatWrapper.style.display = 'flex';
                 }
             }
             
-            function checkLoginState() {
-                // Bypass login and load the chat directly for a default user.
-                loadChatForUser('WormGPT_User'); 
+            // --- (تعديل) تم تغيير اسم الدالة وجعلها async لجلب IP ---
+            async function checkUserState() {
+                // جلب IP المستخدم لاستخدامه كمعرف فريد.
+                try {
+                    const response = await fetch('https://api.ipify.org?format=json');
+                    if (!response.ok) throw new Error('فشل في جلب IP');
+                    const data = await response.json();
+                    const userIP = data.ip;
+                    if (!userIP) throw new Error('لم يتم العثور على IP في الاستجابة');
+                    
+                    loadChatForUser(userIP); // تحميل الدردشة باستخدام IP كمعرف للمستخدم.
+
+                } catch (error) {
+                    console.error("خطأ في جلب IP:", error);
+                    document.body.style.backgroundColor = '#111';
+                    document.body.style.fontFamily = 'Cairo, sans-serif';
+                    document.body.style.display = 'flex';
+                    document.body.style.justifyContent = 'center';
+                    document.body.style.alignItems = 'center';
+                    document.body.style.height = '100vh';
+                    document.body.innerHTML = `
+                        <div style="text-align: center; color: #f0f0f0;">
+                            <h1 style="color: #e50914; font-size: 1.5rem;">خطأ في الاتصال</h1>
+                            <p style="color: #9b9b9b;">لم نتمكن من تحديد هويتك. يرجى التأكد من اتصالك بالإنترنت وتحديث الصفحة.</p>
+                        </div>
+                    `;
+                }
             }
 
-            function loadChatForUser(username) {
-                currentUser = username;
-                showScreen('chat'); // Show the chat interface
-                loadChatState(); // Load past conversations
+            // --- (تعديل) الـ "username" هو الآن عنوان IP ---
+            function loadChatForUser(userId) {
+                currentUser = userId; // currentUser الآن هو IP المستخدم
+                showScreen('chat'); 
+                loadChatState(); 
             }
 
             // =================================================================== //
@@ -602,12 +624,12 @@
 
             async function sendMessage(messageOverride = null) {
                 
-                // --- (جديد) التحقق من حد الرسائل اليومي ---
-                if (!messageOverride) { // لا ينطبق هذا الحد على "إعادة الإنشاء"
-                    checkAndResetMessageCount(); // التأكد من تحديث العداد (في حال تجاوز منتصف الليل)
+                // --- التحقق من حد الرسائل اليومي لكل IP ---
+                if (!messageOverride) { 
+                    checkAndResetMessageCount(); 
                     if (messageCount >= DAILY_MESSAGE_LIMIT) {
                         showToast(`لقد وصلت إلى الحد الأقصى للرسائل اليوم (${DAILY_MESSAGE_LIMIT} رسائل).`, 'error');
-                        return; // إيقاف الإرسال
+                        return;
                     }
                 }
                 // --- نهاية التحقق ---
@@ -640,10 +662,10 @@
                     if (!messageOverride) {
                         conversationHistory.push({ "role": "user", "content": message });
 
-                        // --- (جديد) زيادة عداد الرسائل عند الإرسال ---
+                        // --- زيادة عداد الرسائل عند الإرسال الناجح ---
                         messageCount++;
                         localStorage.setItem(getStorageKey('messageCount'), messageCount.toString());
-                        // --- نهاية الإضافة ---
+                        localStorage.setItem(getStorageKey('lastMessageDate'), new Date().toDateString());
 
                         saveHistory(); 
                     }
@@ -664,10 +686,9 @@
                         const errorText = await response.text();
                         if (!messageOverride) { 
                             conversationHistory.pop(); 
-                            // --- (جديد) خصم العداد في حال الفشل ---
+                            // --- خصم العداد في حال الفشل ---
                             messageCount--;
                             localStorage.setItem(getStorageKey('messageCount'), messageCount.toString());
-                            // --- نهاية الإضافة ---
                         } 
                         saveHistory(); 
                         throw new Error(`خطأ HTTP! الحالة: ${response.status}, الرسالة: ${errorText}`);
@@ -694,10 +715,9 @@
                     } else {
                         if (!messageOverride) {
                             conversationHistory.pop();
-                            // --- (جديد) خصم العداد في حال الفشل ---
+                            // --- خصم العداد في حال الفشل ---
                             messageCount--;
                             localStorage.setItem(getStorageKey('messageCount'), messageCount.toString());
-                            // --- نهاية الإضافة ---
                             saveHistory();
                         }
                     }
@@ -705,10 +725,9 @@
                 } catch (error) {
                     if(!messageOverride && conversationHistory.length > 0 && conversationHistory[conversationHistory.length - 1].role === 'user') {
                         conversationHistory.pop();
-                        // --- (جديد) خصم العداد في حال الفشل ---
+                        // --- خصم العداد في حال الفشل ---
                         messageCount--;
                         localStorage.setItem(getStorageKey('messageCount'), messageCount.toString());
-                        // --- نهاية الإضافة ---
                         saveHistory();
                     }
                     console.error('Error:', error);
@@ -732,12 +751,12 @@
             //                      7. وظائف إدارة المحادثات
             // =================================================================== //
 
+            // --- (تعديل) تستخدم هذه الدالة الآن IP المستخدم كمعرف فريد لربط البيانات به ---
             function getStorageKey(key) {
-                // Use a default user since there's no login system
                 return `wormgpt-${key}_${currentUser}`;
             }
 
-            // --- (جديد) وظيفة التحقق من حد الرسائل اليومي وإعادة تعيينه ---
+            // --- وظيفة التحقق من حد الرسائل اليومي وإعادة تعيينه لعنوان IP الحالي ---
             function checkAndResetMessageCount() {
                 const today = new Date().toDateString();
                 const storedDate = localStorage.getItem(getStorageKey('lastMessageDate'));
@@ -749,10 +768,9 @@
                     // يوم جديد: إعادة تعيين العداد
                     messageCount = 0;
                     localStorage.setItem(getStorageKey('messageCount'), '0');
-                    localStorage.setItem(getStorageKey('lastMessageDate'), today);
+                    // لا نحتاج لتحديث التاريخ هنا، يتم تحديثه عند إرسال أول رسالة في اليوم الجديد
                 }
             }
-            // --- نهاية الإضافة ---
 
             function saveChatList() {
                 localStorage.setItem(getStorageKey('chatList'), JSON.stringify(chatList));
@@ -769,7 +787,7 @@
             }
 
             function loadChatState() {
-                checkAndResetMessageCount(); // (جديد) تحميل عداد الرسائل لليوم الحالي
+                checkAndResetMessageCount(); // تحميل عداد الرسائل لليوم الحالي لـ IP المستخدم
 
                 chatList = JSON.parse(localStorage.getItem(getStorageKey('chatList'))) || [];
                 currentChatId = localStorage.getItem(getStorageKey('currentChatId'));
@@ -1050,4 +1068,4 @@
         })();
     </script>
 </body>
-</html>
+    </html>
