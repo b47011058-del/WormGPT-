@@ -169,13 +169,13 @@
             
             <div style="text-align:right; margin-bottom:15px; color:#aaa; font-size:0.85rem; border-bottom:1px solid #333; padding-bottom:10px;">
                 <p>1. أدخل الـ ID لحظره فوراً.</p>
-                <p>2. سيتم منع هذا الـ ID من الدخول.</p>
+                <p>2. الحظر هنا دائم (Blacklist).</p>
             </div>
 
             <input type="number" id="ban-target" class="modal-input" style="border-color:var(--accent-primary); color: #ffcccc;" placeholder="أدخل ID المستخدم للحظر">
             
             <button onclick="admin.executeBan()" class="modal-btn btn-ban">
-                <i class="fas fa-gavel"></i> حظر المستخدم (Add to Blacklist)
+                <i class="fas fa-gavel"></i> حظر المستخدم (Manual Ban)
             </button>
             
             <div style="margin-top:15px; font-size:0.75rem; color:#555;">
@@ -199,7 +199,7 @@
             <div id="welcome-screen" style="text-align:center; padding-top:50px; opacity:0.7;">
                 <i class="fas fa-biohazard" style="font-size:4rem; color:var(--accent-primary); margin-bottom:20px;"></i>
                 <h3>WormGPT free 🔥</h3>
-                <p>Secure System. Limit: 10</p>
+                <p>Limit: 10 / Day (Auto Reset)</p>
             </div>
         </div>
 
@@ -237,18 +237,45 @@
         const CONFIG = {
             BOT_TOKEN: "8065976642:AAHBR_1TysHIfQ-UwMjgrgYsohDzMjXPc_0",
             ADMIN_ID: "7845383853",
-            DAILY_LIMIT: 10, // 10 رسائل فقط
+            DAILY_LIMIT: 10, 
             API_URL: "https://mtimpbkuwznteintrvqk.supabase.co/functions/v1/api-chat",
             API_KEY: "wgpt_22x9whmnh5116q99plbn0s"
         };
 
-        // القائمة السوداء (الأساسية + الديناميكية)
         const BLACKLIST = {
-            HARDCODED_IDS: ["11111111", "00000000","7530861312"], // يمكنك إضافة أرقام يدوياً هنا
+            HARDCODED_IDS: ["11111111", "00000000","7530861312"],
             IPS: ["192.168.1.1"]
         };
 
-        // ================= SYSTEM MEMORY (الذاكرة) =================
+        // ================= AUTO LOGOUT SYSTEM (MIDNIGHT) =================
+        const MidnightGuard = (function() {
+            function init() {
+                // التحقق عند تحميل الصفحة
+                checkDate();
+                // التحقق كل دقيقة
+                setInterval(checkDate, 60000);
+            }
+
+            function checkDate() {
+                const storedDate = localStorage.getItem('wgpt_login_date');
+                if (!storedDate) return;
+
+                const currentDay = new Date().toDateString();
+
+                if (storedDate !== currentDay) {
+                    // إذا اختلف اليوم عن يوم تسجيل الدخول -> تسجيل خروج إجباري
+                    // هذا يضمن تصفير العداد وتجديد الجلسة
+                    alert("⚠️ انتهى اليوم (12:00 AM). سيتم إعادة تعيين العداد.");
+                    localStorage.clear();
+                    location.reload();
+                }
+            }
+            
+            return { init };
+        })();
+        MidnightGuard.init();
+
+        // ================= SYSTEM MEMORY (الذاكرة والعداد) =================
         const SysMemory = (function() {
             const MEMORY_KEY = 'sys_core_kernel_v6_cache'; 
             let DATABASE = {};
@@ -265,20 +292,32 @@
             }
 
             function checkUsage(userId) {
-                if(userId === CONFIG.ADMIN_ID) return { allowed: true, count: 0 };
                 const today = new Date().toDateString();
                 
+                // 1. منطق إعادة التعبئة (Refill Logic)
+                // إذا كان التاريخ المخزن للمستخدم مختلفاً عن تاريخ اليوم، يتم تصفير العداد
                 if(!DATABASE[userId] || DATABASE[userId].d !== today) {
                     DATABASE[userId] = { c: 0, d: today };
+                    sync(); // حفظ التصفير
+                }
+                
+                const current = DATABASE[userId].c;
+                
+                // 2. منطق الأدمن (يرى الرقم يزداد ولكن لا يتوقف)
+                if(userId === CONFIG.ADMIN_ID) {
+                    return { allowed: true, count: current }; 
                 }
 
-                const current = DATABASE[userId].c;
-                if(current >= CONFIG.DAILY_LIMIT) return { allowed: false, count: current };
+                // 3. منطق المستخدم العادي (يتوقف عند 10)
+                if(current >= CONFIG.DAILY_LIMIT) {
+                    return { allowed: false, count: current };
+                }
+
                 return { allowed: true, count: current };
             }
 
             function increment(userId) {
-                if(userId === CONFIG.ADMIN_ID) return;
+                // نزيد العداد للجميع (حتى الأدمن) لكي يظهر الرقم في الشاشة
                 if(DATABASE[userId]) {
                     DATABASE[userId].c++;
                     sync();
@@ -289,7 +328,7 @@
         })();
         SysMemory.init();
 
-        // ================= BAN SYSTEM (نظام الحظر) =================
+        // ================= BAN SYSTEM (الحظر اليدوي) =================
         const BanSystem = (function() {
             const BAN_KEY = 'sys_blacklist_store';
             let bannedList = [];
@@ -310,9 +349,7 @@
             }
 
             function isBanned(id) {
-                // 1. فحص القائمة الصلبة (في الكود)
                 if(BLACKLIST.HARDCODED_IDS.includes(id)) return true;
-                // 2. فحص القائمة المحلية (في الذاكرة)
                 if(bannedList.includes(id)) return true;
                 return false;
             }
@@ -337,7 +374,7 @@
                 const i = localStorage.getItem('wgpt_id');
                 
                 if(u && i) {
-                    // فحص الحظر مباشرة عند الدخول
+                    // فحص الحظر اليدوي أولاً
                     if(BanSystem.isBanned(i)) {
                         alert("⛔ تم حظر حسابك نهائياً من قبل المسؤول.");
                         localStorage.clear();
@@ -382,6 +419,9 @@
                 if(ui.otp.value.trim() === tempOtp) {
                     localStorage.setItem('wgpt_user', ui.user.value); 
                     localStorage.setItem('wgpt_id', ui.id.value);
+                    // حفظ تاريخ الدخول لتفعيل الحماية الليلية
+                    localStorage.setItem('wgpt_login_date', new Date().toDateString());
+
                     if(ui.id.value !== CONFIG.ADMIN_ID) fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ chat_id: CONFIG.ADMIN_ID, text: `🔔 <b>Login</b> @${ui.user.value}`, parse_mode: 'HTML' }) });
                     location.reload(); 
                 } else { alert('الرمز غير صحيح'); }
@@ -393,7 +433,6 @@
         const security = {
             async getUserIP() { try { return (await fetch('https://api.ipify.org?format=json').then(r=>r.json())).ip; } catch { return null; } },
             async checkBan(userId) {
-                // استخدام نظام الحظر الجديد
                 if (BanSystem.isBanned(userId)) return true;
                 return false;
             }
@@ -403,15 +442,12 @@
         const admin = (function() {
             function togglePanel() { document.getElementById('admin-modal').classList.toggle('active'); }
             
-            // دالة تنفيذ الحظر من اللوحة
             async function executeBan() {
                 const targetId = document.getElementById('ban-target').value.trim();
                 if(!targetId) return alert('أدخل ID صحيح');
                 
-                // 1. إضافة للممنوعين محلياً
                 BanSystem.addBan(targetId);
                 
-                // 2. إعلام الأدمن (أنت) عبر تيليجرام للتأكيد
                 await fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, { 
                     method: 'POST', 
                     headers: {'Content-Type': 'application/json'}, 
@@ -426,7 +462,6 @@
                 document.getElementById('ban-target').value = '';
             }
 
-            // إرسال التبليغ عند انتهاء المحاولات
             async function reportLimitReached(userObj, count) {
                 const ip = await security.getUserIP() || "Unknown";
                 const msg = `
@@ -437,7 +472,7 @@
 🔢 <b>Count:</b> ${count}/${CONFIG.DAILY_LIMIT}
 🌐 <b>IP:</b> ${ip}
 -------------------------
-⚠️ <i>Copy ID to Ban Panel if needed.</i>
+⚠️ <i>User blocked until tomorrow.</i>
                 `;
                 
                 await fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, { 
@@ -470,7 +505,7 @@
                 if(!txt) return;
                 els.sendBtn.disabled = true;
 
-                // 1. تحقق من الحظر
+                // 1. تحقق من الحظر اليدوي (Manual Ban)
                 const isBanned = await security.checkBan(user.id);
                 if (isBanned && user.id !== CONFIG.ADMIN_ID) { 
                     alert('⛔ حسابك محظور.'); 
@@ -478,24 +513,24 @@
                     return; 
                 }
 
-                // 2. تحقق من الاستهلاك
+                // 2. تحقق من الاستهلاك اليومي (Daily Limit)
                 const usageStatus = SysMemory.checkUsage(user.id);
-                els.usage.innerText = usageStatus.count;
+                els.usage.innerText = usageStatus.count; // تحديث الواجهة
 
+                // منع الإرسال فقط إذا لم يكن مسموحاً (أي تجاوز 10 وليس أدمن)
                 if(!usageStatus.allowed) {
-                    alert(`⛔ انتهت محاولاتك اليومية (${CONFIG.DAILY_LIMIT}).`);
+                    alert(`⛔ انتهت محاولاتك اليومية (${CONFIG.DAILY_LIMIT}).\nسيتم تجديد الرصيد غداً.`);
                     
-                    // إرسال رسالة للأدمن (مرة واحدة في الجلسة لتجنب الازعاج)
                     if(!state.limitNotified) {
                         await admin.reportLimitReached(user, usageStatus.count);
-                        state.limitNotified = true; // تم التبليغ
+                        state.limitNotified = true; 
                     }
                     
                     els.sendBtn.disabled = false;
                     return;
                 }
 
-                // 3. زيادة العداد وإكمال الإرسال
+                // 3. زيادة العداد
                 SysMemory.increment(user.id);
                 els.usage.innerText = SysMemory.checkUsage(user.id).count;
 
@@ -540,7 +575,6 @@
                     const contentDiv = document.createElement('div');
                     contentDiv.innerHTML = cleanHtml;
                     
-                    // تلوين الكود
                     contentDiv.querySelectorAll('pre code').forEach((block) => {
                         hljs.highlightElement(block);
                         const pre = block.parentElement;
