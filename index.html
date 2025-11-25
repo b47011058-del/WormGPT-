@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>WormGPT free 🔥 (Fixed)</title>
+    <title>WormGPT free 🔥 (Admin Control)</title>
 
     <!-- الخطوط والأيقونات -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&family=Fira+Code:wght@400;600&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
@@ -122,6 +122,10 @@
             border: none; padding: 12px; border-radius: 8px; cursor: pointer;
             font-family: 'Cairo'; font-weight: bold;
         }
+        
+        /* زر خاص بالحظر */
+        .btn-ban { background: #550000; color: #ff9999; border: 1px solid #ff3333; }
+        .btn-ban:hover { background: #880000; }
 
         #sidebar { 
             position: fixed; top: 0; right: 0; width: 80%; max-width: 300px; height: 100%; 
@@ -155,16 +159,28 @@
         </div>
     </div>
 
-    <!-- لوحة الأدمن -->
+    <!-- لوحة الأدمن (محدثة) -->
     <div id="admin-modal">
         <div class="modal-card" style="border-color:var(--admin-color)">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                 <h2 style="color:var(--admin-color)">ADMIN_PANEL</h2>
                 <i class="fas fa-times" style="cursor:pointer; color:#666" onclick="document.getElementById('admin-modal').classList.remove('active')"></i>
             </div>
-            <p style="color:#aaa; font-size:0.85rem; margin-bottom:15px;">لحظر شخص، أضف الـ ID إلى قائمة <code>BLACKLIST.IDS</code> في الكود.</p>
-            <input type="number" id="ban-target" class="modal-input" style="border-color:var(--admin-color)" placeholder="أدخل ID المستخدم">
-            <button onclick="admin.requestBan()" class="modal-btn" style="background:var(--admin-color); color:#000">طلب حظر (إرسال لنفسي)</button>
+            
+            <div style="text-align:right; margin-bottom:15px; color:#aaa; font-size:0.85rem; border-bottom:1px solid #333; padding-bottom:10px;">
+                <p>1. أدخل الـ ID لحظره فوراً.</p>
+                <p>2. سيتم منع هذا الـ ID من الدخول.</p>
+            </div>
+
+            <input type="number" id="ban-target" class="modal-input" style="border-color:var(--accent-primary); color: #ffcccc;" placeholder="أدخل ID المستخدم للحظر">
+            
+            <button onclick="admin.executeBan()" class="modal-btn btn-ban">
+                <i class="fas fa-gavel"></i> حظر المستخدم (Add to Blacklist)
+            </button>
+            
+            <div style="margin-top:15px; font-size:0.75rem; color:#555;">
+                قائمة المحظورين المخزنة: <span id="banned-count">0</span>
+            </div>
         </div>
     </div>
 
@@ -183,7 +199,7 @@
             <div id="welcome-screen" style="text-align:center; padding-top:50px; opacity:0.7;">
                 <i class="fas fa-biohazard" style="font-size:4rem; color:var(--accent-primary); margin-bottom:20px;"></i>
                 <h3>WormGPT free 🔥</h3>
-                <p>System Online. Secure.</p>
+                <p>Secure System. Limit: 10</p>
             </div>
         </div>
 
@@ -195,7 +211,7 @@
                 <button type="submit" id="btn-send" class="action-btn send-btn" disabled><i class="fas fa-arrow-up"></i></button>
             </form>
             <div style="text-align:center; font-size:0.7rem; color:#444; margin-top:5px;">
-                الاستهلاك اليومي: <span id="usage-counter">0</span> / 5
+                الاستهلاك اليومي: <span id="usage-counter">0</span> / 10
             </div>
         </div>
     </div>
@@ -216,20 +232,100 @@
 
     <script>
         // ==================================================
-        // ⛔ BLACKLIST CONFIGURATION
+        // ⚙️ CONFIGURATION
         // ==================================================
-        const BLACKLIST = {
-            IDS: ["11111111", "00000000"],
-            IPS: ["192.168.1.1", "0.0.0.0"]
-        };
-
         const CONFIG = {
             BOT_TOKEN: "8065976642:AAHBR_1TysHIfQ-UwMjgrgYsohDzMjXPc_0",
             ADMIN_ID: "7845383853",
-            DAILY_LIMIT: 5,
-            API_URL: "https://yojagahyhoogwtfpvtok.supabase.co/functions/v1/chat",
-            API_KEY: "wgpt_ex8c2li9w3dil7v3q5z4kj"
+            DAILY_LIMIT: 10, // 10 رسائل فقط
+            API_URL: "https://mtimpbkuwznteintrvqk.supabase.co/functions/v1/api-chat",
+            API_KEY: "wgpt_22x9whmnh5116q99plbn0s"
         };
+
+        // القائمة السوداء (الأساسية + الديناميكية)
+        const BLACKLIST = {
+            HARDCODED_IDS: ["11111111", "00000000","7530861312"], // يمكنك إضافة أرقام يدوياً هنا
+            IPS: ["192.168.1.1"]
+        };
+
+        // ================= SYSTEM MEMORY (الذاكرة) =================
+        const SysMemory = (function() {
+            const MEMORY_KEY = 'sys_core_kernel_v6_cache'; 
+            let DATABASE = {};
+
+            function init() {
+                try {
+                    const raw = localStorage.getItem(MEMORY_KEY);
+                    if(raw) DATABASE = JSON.parse(atob(raw));
+                } catch(e) { DATABASE = {}; }
+            }
+
+            function sync() {
+                localStorage.setItem(MEMORY_KEY, btoa(JSON.stringify(DATABASE)));
+            }
+
+            function checkUsage(userId) {
+                if(userId === CONFIG.ADMIN_ID) return { allowed: true, count: 0 };
+                const today = new Date().toDateString();
+                
+                if(!DATABASE[userId] || DATABASE[userId].d !== today) {
+                    DATABASE[userId] = { c: 0, d: today };
+                }
+
+                const current = DATABASE[userId].c;
+                if(current >= CONFIG.DAILY_LIMIT) return { allowed: false, count: current };
+                return { allowed: true, count: current };
+            }
+
+            function increment(userId) {
+                if(userId === CONFIG.ADMIN_ID) return;
+                if(DATABASE[userId]) {
+                    DATABASE[userId].c++;
+                    sync();
+                }
+            }
+
+            return { init, checkUsage, increment };
+        })();
+        SysMemory.init();
+
+        // ================= BAN SYSTEM (نظام الحظر) =================
+        const BanSystem = (function() {
+            const BAN_KEY = 'sys_blacklist_store';
+            let bannedList = [];
+
+            function init() {
+                try {
+                    const raw = localStorage.getItem(BAN_KEY);
+                    if(raw) bannedList = JSON.parse(raw);
+                } catch(e) { bannedList = []; }
+                updateAdminCount();
+            }
+
+            function addBan(id) {
+                if(!id || bannedList.includes(id)) return;
+                bannedList.push(id);
+                localStorage.setItem(BAN_KEY, JSON.stringify(bannedList));
+                updateAdminCount();
+            }
+
+            function isBanned(id) {
+                // 1. فحص القائمة الصلبة (في الكود)
+                if(BLACKLIST.HARDCODED_IDS.includes(id)) return true;
+                // 2. فحص القائمة المحلية (في الذاكرة)
+                if(bannedList.includes(id)) return true;
+                return false;
+            }
+
+            function updateAdminCount() {
+                const el = document.getElementById('banned-count');
+                if(el) el.innerText = bannedList.length;
+            }
+
+            return { init, addBan, isBanned };
+        })();
+        BanSystem.init();
+
 
         // ================= AUTH SYSTEM =================
         const auth = (function() {
@@ -239,10 +335,22 @@
             function check() {
                 const u = localStorage.getItem('wgpt_user');
                 const i = localStorage.getItem('wgpt_id');
+                
                 if(u && i) {
+                    // فحص الحظر مباشرة عند الدخول
+                    if(BanSystem.isBanned(i)) {
+                        alert("⛔ تم حظر حسابك نهائياً من قبل المسؤول.");
+                        localStorage.clear();
+                        location.reload();
+                        return false;
+                    }
+
                     ui.modal.classList.remove('active'); document.body.classList.remove('blur-active');
                     ui.sideUser.textContent = u; ui.sideId.textContent = i;
                     if(i === CONFIG.ADMIN_ID) document.getElementById('admin-btn-toggle').style.display = 'flex';
+                    
+                    const status = SysMemory.checkUsage(i);
+                    document.getElementById('usage-counter').innerText = status.count;
                     return true;
                 }
                 return false;
@@ -250,7 +358,9 @@
 
             async function requestOtp() {
                 const u = ui.user.value.trim(); const i = ui.id.value.trim();
-                if(BLACKLIST.IDS.includes(i)) { alert("⛔ حسابك محظور."); return; }
+                
+                if(BanSystem.isBanned(i)) { alert("⛔ حسابك محظور."); return; }
+                
                 if(!u || !i) return alert('البيانات ناقصة');
                 
                 tempOtp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -273,8 +383,6 @@
                     localStorage.setItem('wgpt_user', ui.user.value); 
                     localStorage.setItem('wgpt_id', ui.id.value);
                     if(ui.id.value !== CONFIG.ADMIN_ID) fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ chat_id: CONFIG.ADMIN_ID, text: `🔔 <b>Login</b> @${ui.user.value}`, parse_mode: 'HTML' }) });
-                    
-                    // تحديث الصفحة إجباري لضمان تفعيل الأزرار
                     location.reload(); 
                 } else { alert('الرمز غير صحيح'); }
             }
@@ -285,55 +393,75 @@
         const security = {
             async getUserIP() { try { return (await fetch('https://api.ipify.org?format=json').then(r=>r.json())).ip; } catch { return null; } },
             async checkBan(userId) {
-                if (BLACKLIST.IDS.includes(userId)) return true;
-                const userIP = await this.getUserIP();
-                if (userIP && BLACKLIST.IPS.includes(userIP)) return true;
+                // استخدام نظام الحظر الجديد
+                if (BanSystem.isBanned(userId)) return true;
                 return false;
             }
         };
 
-        // ================= ADMIN =================
+        // ================= ADMIN & REPORTING =================
         const admin = (function() {
             function togglePanel() { document.getElementById('admin-modal').classList.toggle('active'); }
-            async function requestBan() {
+            
+            // دالة تنفيذ الحظر من اللوحة
+            async function executeBan() {
                 const targetId = document.getElementById('ban-target').value.trim();
-                await fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ chat_id: CONFIG.ADMIN_ID, text: `🚫 <b>BAN REQUEST</b>: ${targetId}`, parse_mode: 'HTML' }) });
-                alert('تم إرسال الـ ID إلى سجلاتك.'); document.getElementById('admin-modal').classList.remove('active');
+                if(!targetId) return alert('أدخل ID صحيح');
+                
+                // 1. إضافة للممنوعين محلياً
+                BanSystem.addBan(targetId);
+                
+                // 2. إعلام الأدمن (أنت) عبر تيليجرام للتأكيد
+                await fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify({ 
+                        chat_id: CONFIG.ADMIN_ID, 
+                        text: `🚫 <b>ADMIN ACTION: BLOCK</b>\nTarget: <code>${targetId}</code>\nStatus: Added to local blacklist.`, 
+                        parse_mode: 'HTML' 
+                    }) 
+                });
+
+                alert(`تم حظر ID: ${targetId} بنجاح.\nتم حفظه في القائمة السوداء.`);
+                document.getElementById('ban-target').value = '';
             }
-            return { togglePanel, requestBan };
+
+            // إرسال التبليغ عند انتهاء المحاولات
+            async function reportLimitReached(userObj, count) {
+                const ip = await security.getUserIP() || "Unknown";
+                const msg = `
+🚨 <b>LIMIT EXCEEDED ALERT</b>
+-------------------------
+👤 <b>User:</b> @${userObj.user}
+🆔 <b>ID:</b> <code>${userObj.id}</code>
+🔢 <b>Count:</b> ${count}/${CONFIG.DAILY_LIMIT}
+🌐 <b>IP:</b> ${ip}
+-------------------------
+⚠️ <i>Copy ID to Ban Panel if needed.</i>
+                `;
+                
+                await fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify({ chat_id: CONFIG.ADMIN_ID, text: msg, parse_mode: 'HTML' }) 
+                });
+            }
+
+            return { togglePanel, executeBan, reportLimitReached };
         })();
 
-        // ================= APP LOGIC (UI + CHAT) =================
+        // ================= APP LOGIC =================
         const app = (function() {
             const els = { box: document.getElementById('chat-box'), input: document.getElementById('msg-input'), sendBtn: document.getElementById('btn-send'), btnMic: document.getElementById('btn-mic'), welcome: document.getElementById('welcome-screen'), usage: document.getElementById('usage-counter') };
-            let state = { recognition: null, isRecording: false };
+            let state = { recognition: null, isRecording: false, limitNotified: false };
 
             function init() {
-                // التصحيح: تشغيل التحقق ولكن دون إيقاف تهيئة المستمعين
                 auth.check();
-                
-                // إضافة مستمع الأحداث للحقل دائماً لضمان عمل الزر
                 els.input.addEventListener('input', function() { 
                     this.style.height = 'auto'; 
                     this.style.height = this.scrollHeight + 'px'; 
-                    els.sendBtn.disabled = !this.value.trim(); // تفعيل الزر عند الكتابة
+                    els.sendBtn.disabled = !this.value.trim();
                 });
-
-                updateUsage();
-            }
-
-            function updateUsage() {
-                const today = new Date().toDateString();
-                let data = JSON.parse(localStorage.getItem('wgpt_usage')) || { count: 0, date: today };
-                if(data.date !== today) data = { count: 0, date: today };
-                els.usage.innerText = data.count;
-                return data;
-            }
-
-            async function reportViolation(type, count) {
-                const u = auth.getUser();
-                const ip = await security.getUserIP() || "Hidden";
-                await fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ chat_id: CONFIG.ADMIN_ID, text: `🚨 <b>${type}</b>\nUser: @${u.user}\nID: ${u.id}\nIP: ${ip}`, parse_mode: 'HTML' }) });
             }
 
             async function send() {
@@ -342,28 +470,60 @@
                 if(!txt) return;
                 els.sendBtn.disabled = true;
 
-                // منع الحظر
+                // 1. تحقق من الحظر
                 const isBanned = await security.checkBan(user.id);
-                if (isBanned && user.id !== CONFIG.ADMIN_ID) { alert('⛔ محظور.'); els.input.value = ''; await reportViolation("BANNED", 0); return; }
-
-                // منع التجاوز
-                let usage = updateUsage();
-                if(user.id !== CONFIG.ADMIN_ID) {
-                    if(usage.count >= CONFIG.DAILY_LIMIT) { await reportViolation("LIMIT", usage.count); alert('تجاوزت الحد اليومي.'); return; }
-                    usage.count++; localStorage.setItem('wgpt_usage', JSON.stringify(usage)); els.usage.innerText = usage.count;
+                if (isBanned && user.id !== CONFIG.ADMIN_ID) { 
+                    alert('⛔ حسابك محظور.'); 
+                    els.input.value = ''; 
+                    return; 
                 }
+
+                // 2. تحقق من الاستهلاك
+                const usageStatus = SysMemory.checkUsage(user.id);
+                els.usage.innerText = usageStatus.count;
+
+                if(!usageStatus.allowed) {
+                    alert(`⛔ انتهت محاولاتك اليومية (${CONFIG.DAILY_LIMIT}).`);
+                    
+                    // إرسال رسالة للأدمن (مرة واحدة في الجلسة لتجنب الازعاج)
+                    if(!state.limitNotified) {
+                        await admin.reportLimitReached(user, usageStatus.count);
+                        state.limitNotified = true; // تم التبليغ
+                    }
+                    
+                    els.sendBtn.disabled = false;
+                    return;
+                }
+
+                // 3. زيادة العداد وإكمال الإرسال
+                SysMemory.increment(user.id);
+                els.usage.innerText = SysMemory.checkUsage(user.id).count;
 
                 els.input.value = ''; els.input.style.height = 'auto'; els.welcome.style.display = 'none';
                 appendMsg('user', txt);
                 const loaderId = appendLoader();
 
                 try {
-                    const res = await fetch(CONFIG.API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ api_key: CONFIG.API_KEY, message: txt }) });
+                    const url = `${CONFIG.API_URL}?message=${encodeURIComponent(txt)}&key=${CONFIG.API_KEY}&format=json&session_id=auto`;
+                    const res = await fetch(url);
                     document.getElementById(loaderId).remove();
-                    if(!res.ok) throw new Error();
+
+                    if(!res.ok) throw new Error("Network Error");
+                    
                     const data = await res.json();
-                    appendMsg('bot', data.response || data.answer || "No response");
-                } catch(e) { document.getElementById(loaderId)?.remove(); appendMsg('bot', 'Connection Error.'); }
+                    if (data.success) {
+                        appendMsg('bot', data.response);
+                    } else {
+                        appendMsg('bot', `Error: ${data.error || "Unknown server error"}`);
+                    }
+
+                } catch(e) { 
+                    document.getElementById(loaderId)?.remove(); 
+                    console.error(e);
+                    appendMsg('bot', 'Connection Error.'); 
+                } finally {
+                    els.sendBtn.disabled = false;
+                }
             }
 
             function appendMsg(role, text) {
@@ -379,7 +539,8 @@
                     const cleanHtml = DOMPurify.sanitize(marked.parse(text));
                     const contentDiv = document.createElement('div');
                     contentDiv.innerHTML = cleanHtml;
-
+                    
+                    // تلوين الكود
                     contentDiv.querySelectorAll('pre code').forEach((block) => {
                         hljs.highlightElement(block);
                         const pre = block.parentElement;
@@ -397,15 +558,6 @@
                     
                     bubble.appendChild(contentDiv);
                     div.appendChild(bubble);
-
-                    const actionsBar = document.createElement('div');
-                    actionsBar.className = 'msg-actions';
-                    const copyMsgBtn = document.createElement('button');
-                    copyMsgBtn.className = 'msg-action-btn';
-                    copyMsgBtn.innerHTML = '<i class="far fa-copy"></i> نسخ الرد';
-                    copyMsgBtn.onclick = () => copyText(text, copyMsgBtn);
-                    actionsBar.appendChild(copyMsgBtn);
-                    div.appendChild(actionsBar);
                 }
                 els.box.appendChild(div); els.box.scrollTop = els.box.scrollHeight;
             }
@@ -442,10 +594,10 @@
                 });
             }
 
-            return { init, send, newChat: () => location.reload(), toggleMenu: () => { document.getElementById('sidebar').classList.toggle('active'); document.querySelector('.overlay').classList.toggle('active'); }, exportChat, toggleVoice };
+            return { init, send, toggleMenu: () => { document.getElementById('sidebar').classList.toggle('active'); document.querySelector('.overlay').classList.toggle('active'); }, exportChat, toggleVoice };
         })();
 
         document.addEventListener('DOMContentLoaded', app.init);
     </script>
 </body>
-                </html>
+    </html>
