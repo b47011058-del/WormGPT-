@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#000000">
-    <title>WormGPT v2.5</title>
+    <title>WormGPT free 🔥 (Full Features)</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- الخطوط والأيقونات -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&family=Fira+Code:wght@400;600&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
+    <!-- مكتبات التنسيق والمعالجة -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark-reasonable.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -18,96 +17,187 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
-        /* CSS Variables & Reset */
-        :root { --bg-core: #050505; --accent-primary: #ff0033; --accent-glow: rgba(255, 0, 51, 0.4); --text-main: #e0e0e0; --safe-top: env(safe-area-inset-top); --safe-bottom: env(safe-area-inset-bottom); }
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
-
-        body {
-            background-color: var(--bg-core); color: var(--text-main); font-family: 'Cairo', sans-serif;
-            height: 100dvh; overflow: hidden; background-image: radial-gradient(circle at 50% 0%, #1a0005 0%, #000000 80%);
-            -webkit-touch-callout: none; user-select: none;
+        /* ==================== CSS VARIABLES ==================== */
+        :root {
+            --bg-core: #050505;
+            --accent-primary: #ff0033;
+            --accent-glow: rgba(255, 0, 51, 0.4);
+            --text-main: #e0e0e0;
+            --admin-color: #00ff88;
         }
 
-        .msg-bubble { user-select: text; }
-        body::after { content: ""; position: absolute; inset: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%); background-size: 100% 4px; pointer-events: none; z-index: 9999; opacity: 0.6; }
+        /* ==================== BASIC SETUP ==================== */
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+        body {
+            background-color: var(--bg-core); color: var(--text-main);
+            font-family: 'Cairo', sans-serif; height: 100dvh; overflow: hidden;
+            background-image: radial-gradient(circle at 50% 0%, #1a0005 0%, #000000 80%);
+            user-select: none;
+        }
 
-        /* Components */
-        #chat-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; z-index: 10; }
-        .chat-header { padding: calc(10px + var(--safe-top)) 15px 10px 15px; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 0, 0, 0.95); border-bottom: 1px solid #330000; backdrop-filter: blur(10px); }
-        #title { font-family: 'Orbitron', sans-serif; font-size: 1.2rem; color: var(--accent-primary); text-shadow: 0 0 10px var(--accent-glow); }
-        .header-btn { width: 38px; height: 38px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #ccc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; min-width: 44px; min-height: 44px; }
+        /* Scanlines Effect */
+        body::after {
+            content: ""; position: absolute; inset: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
+            background-size: 100% 4px; pointer-events: none; z-index: 9999; opacity: 0.6;
+        }
+
+        /* ==================== LAYOUT ==================== */
+        #chat-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; z-index: 10; transition: filter 0.3s; }
+        body.blur-active #chat-wrapper { filter: blur(5px); pointer-events: none; }
+
+        /* Header */
+        .chat-header {
+            padding: 15px; display: flex; justify-content: space-between; align-items: center;
+            background: rgba(10, 0, 0, 0.95); border-bottom: 1px solid #330000;
+        }
+        #title { font-family: 'Orbitron'; font-size: 1.2rem; color: var(--accent-primary); text-shadow: 0 0 10px var(--accent-glow); }
+        .header-btn { 
+            width: 40px; height: 40px; background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); color: #ccc; border-radius: 8px; 
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+        }
         
-        #chat-box { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 30px; scroll-behavior: smooth; }
+        #admin-btn-toggle { display: none; border-color: var(--admin-color); color: var(--admin-color); box-shadow: 0 0 10px rgba(0, 255, 136, 0.2); }
+
+        /* Chat Area */
+        #chat-box { flex: 1; overflow-y: auto; padding: 15px; scroll-behavior: smooth; }
         
-        #welcome-screen { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0.8; overflow-y: auto; padding: 20px 0; }
-        #welcome-screen i.main-icon { font-size: 4rem; color: var(--accent-primary); margin-bottom: 20px; animation: pulse 3s infinite; }
-        @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
-
-        .suggestions { display: grid; gap: 10px; width: 100%; max-width: 650px; margin-top: 30px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-        .sug-card { background: rgba(255,255,255,0.03); border: 1px solid #333; padding: 12px; border-radius: 8px; font-size: 0.9rem; display: flex; gap: 10px; align-items: center; cursor: pointer; transition: 0.2s; min-height: 44px; }
-        .sug-card:hover { background: rgba(255, 0, 51, 0.1); border-color: var(--accent-primary); }
-
-        .message { max-width: 92%; margin-bottom: 20px; display: flex; flex-direction: column; position: relative; }
-        .msg-bubble { padding: 12px 16px; border-radius: 12px; font-size: 0.95rem; line-height: 1.6; word-wrap: break-word; }
+        /* Messages */
+        .message { max-width: 92%; margin-bottom: 20px; display: flex; flex-direction: column; }
+        .msg-bubble { padding: 12px 16px; border-radius: 12px; font-size: 0.95rem; line-height: 1.6; user-select: text; }
+        
         .msg-user { align-self: flex-end; margin-left: auto; }
         .msg-user .msg-bubble { background: linear-gradient(145deg, #80001a, #4d000f); color: #fff; border-bottom-left-radius: 2px; }
-        .msg-bot { align-self: flex-start; margin-right: auto; width: 100%; }
-        .msg-bot .msg-bubble { background: #111; border: 1px solid #2a2a2a; color: #ddd; border-bottom-right-radius: 2px; }
         
-        .msg-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 5px 10px; margin-top: 5px; opacity: 0.7; }
-        .msg-action-btn { background: none; border: none; color: #888; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 5px; font-family: 'Cairo'; min-height: 32px; padding: 0 8px; }
+        .msg-bot { align-self: flex-start; margin-right: auto; width: 100%; }
+        .msg-bot .msg-bubble { background: #111; border: 1px solid #2a2a2a; border-bottom-right-radius: 2px; }
+
+        /* Actions Bar (Copy Message) */
+        .msg-actions {
+            display: flex; justify-content: flex-end; gap: 10px; padding: 5px 10px;
+            margin-top: 5px; opacity: 0.7; transition: opacity 0.3s;
+        }
+        .msg-action-btn {
+            background: none; border: none; color: #888; font-size: 0.8rem; cursor: pointer;
+            display: flex; align-items: center; gap: 5px; font-family: 'Cairo';
+        }
         .msg-action-btn:hover { color: var(--accent-primary); }
 
+        /* Code Blocks & Copy Buttons */
         .code-wrapper { margin: 12px 0; border: 1px solid #333; border-radius: 6px; overflow: hidden; background: #1e1e1e; direction: ltr; text-align: left; }
-        .code-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #252525; border-bottom: 1px solid #333; font-family: 'Fira Code'; font-size: 0.8rem; color: #aaa; }
-        .copy-code-btn { border: none; background: rgba(255,255,255,0.1); color: #fff; cursor: pointer; font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; min-height: 28px; }
+        .code-header {
+            display: flex; justify-content: space-between; align-items: center; padding: 8px 12px;
+            background: #252525; border-bottom: 1px solid #333; font-family: 'Fira Code'; font-size: 0.8rem; color: #aaa;
+        }
+        .copy-code-btn { 
+            border: none; background: rgba(255,255,255,0.1); color: #fff; cursor: pointer; 
+            font-size: 0.75rem; padding: 4px 8px; border-radius: 4px;
+        }
         .copy-code-btn:hover { background: var(--accent-primary); }
-        pre { padding: 15px; overflow-x: auto; margin: 0; } code { font-family: 'Fira Code', monospace; font-size: 0.85rem; }
+        pre { padding: 15px; overflow-x: auto; margin: 0; }
+        code { font-family: 'Fira Code'; font-size: 0.85rem; }
 
-        .input-wrapper { background: rgba(0, 0, 0, 0.95); border-top: 1px solid #222; padding: 10px; padding-bottom: calc(10px + var(--safe-bottom)); position: sticky; bottom: 0; z-index: 30; }
-        .input-box { display: flex; align-items: flex-end; gap: 8px; background: #151515; border-radius: 20px; padding: 6px 12px; border: 1px solid #333; }
-        .input-box:focus-within { border-color: var(--accent-primary); }
-        textarea { flex: 1; background: transparent; border: none; color: #fff; padding: 8px 0; font-size: 1rem; max-height: 120px; resize: none; font-family: 'Cairo'; }
-        .action-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: transparent; color: #666; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transition: 0.2s; min-width: 44px; min-height: 44px; }
-        .send-btn { background: var(--accent-primary); color: white; margin-bottom: 2px; }
+        /* Input Area */
+        .input-wrapper { background: rgba(0,0,0,0.95); border-top: 1px solid #222; padding: 10px; }
+        .input-box { display: flex; align-items: flex-end; gap: 10px; background: #151515; border-radius: 20px; padding: 8px 15px; border: 1px solid #333; }
+        textarea { flex: 1; background: transparent; border: none; color: #fff; font-family: 'Cairo'; resize: none; font-size: 1rem; max-height: 100px; }
+        .action-btn { background: transparent; border: none; color: #666; font-size: 1.2rem; cursor: pointer; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+        .send-btn { background: var(--accent-primary); color: white; }
         .send-btn:disabled { background: #333; color: #555; }
+        
         .mic-active { color: #ff0033 !important; animation: micPulse 1s infinite; }
         @keyframes micPulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
 
-        #sidebar { position: fixed; top: 0; right: 0; width: 80%; max-width: 300px; height: 100%; background: #0a0a0a; border-left: 1px solid #222; z-index: 100; transform: translateX(100%); transition: 0.3s; display: flex; flex-direction: column; padding-top: var(--safe-top); }
+        /* ==================== MODALS ==================== */
+        #login-modal, #admin-modal {
+            position: fixed; inset: 0; z-index: 2000;
+            display: none; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.9); backdrop-filter: blur(10px);
+        }
+        #login-modal.active, #admin-modal.active { display: flex; }
+        
+        .modal-card {
+            background: #111; border: 1px solid #333; border-radius: 15px;
+            width: 90%; max-width: 400px; padding: 25px; text-align: center;
+            box-shadow: 0 0 30px rgba(255,0,51,0.15);
+        }
+        .modal-input {
+            width: 100%; background: #050505; border: 1px solid #333;
+            color: #fff; padding: 12px; border-radius: 8px; margin-bottom: 15px;
+            font-family: 'Cairo'; text-align: center;
+        }
+        .modal-btn {
+            width: 100%; background: var(--accent-primary); color: #fff;
+            border: none; padding: 12px; border-radius: 8px; cursor: pointer;
+            font-family: 'Cairo'; font-weight: bold;
+        }
+
+        /* Sidebar */
+        #sidebar { 
+            position: fixed; top: 0; right: 0; width: 80%; max-width: 300px; height: 100%; 
+            background: #0a0a0a; border-left: 1px solid #222; z-index: 100; 
+            transform: translateX(100%); transition: 0.3s;
+        }
         #sidebar.active { transform: translateX(0); }
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 90; opacity: 0; pointer-events: none; transition: 0.3s; backdrop-filter: blur(2px); }
-        .overlay.active { opacity: 1; pointer-events: auto; }
-        .chat-item { padding: 15px; border-bottom: 1px solid #151515; color: #999; display: flex; justify-content: space-between; min-height: 44px; align-items: center; }
-        .chat-item.active { background: #1a0505; color: #fff; border-left: 3px solid var(--accent-primary); }
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 90; display: none; }
+        .overlay.active { display: block; }
     </style>
 </head>
-<body>
-    
+<body class="blur-active">
+
+    <!-- Login -->
+    <div id="login-modal" class="active">
+        <div class="modal-card">
+            <i class="fas fa-fingerprint" style="font-size: 3rem; color: var(--accent-primary); margin-bottom: 15px;"></i>
+            <h2>تسجيل الدخول</h2>
+            <div id="step-1">
+                <input type="text" id="login-user" class="modal-input" placeholder="اسم المستخدم (تلجرام)">
+                <input type="number" id="login-id" class="modal-input" placeholder="Telegram ID">
+                <button onclick="auth.requestOtp()" class="modal-btn">إرسال رمز التحقق</button>
+                <p style="margin-top:10px; font-size:0.8rem; color:#666">يجب الضغط على <b>/start</b> في البوت أولاً</p>
+            </div>
+            <div id="step-2" style="display:none;">
+                <p style="color:#aaa; margin-bottom:10px;">تم إرسال الرمز إلى تيليجرام</p>
+                <input type="text" id="login-otp" class="modal-input" placeholder="أدخل الكود">
+                <button onclick="auth.verifyOtp()" class="modal-btn">دخول</button>
+                <button onclick="auth.back()" style="background:none; border:none; color:#666; margin-top:10px; cursor:pointer">رجوع</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="admin-modal">
+        <div class="modal-card" style="border-color:var(--admin-color)">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h2 style="color:var(--admin-color)">ADMIN_PANEL</h2>
+                <i class="fas fa-times" style="cursor:pointer; color:#666" onclick="document.getElementById('admin-modal').classList.remove('active')"></i>
+            </div>
+            <p style="color:#aaa; font-size:0.85rem; margin-bottom:15px;">لحظر شخص، أضف الـ ID إلى قائمة <code>BLACKLIST.IDS</code> في الكود.</p>
+            <input type="number" id="ban-target" class="modal-input" style="border-color:var(--admin-color)" placeholder="أدخل ID المستخدم">
+            <button onclick="admin.requestBan()" class="modal-btn" style="background:var(--admin-color); color:#000">طلب حظر (إرسال لنفسي)</button>
+        </div>
+    </div>
+
+    <!-- Main App -->
     <div id="chat-wrapper">
         <header class="chat-header">
-            <button onclick="app.newChat()" class="header-btn"><i class="fas fa-plus"></i></button>
+            <div style="display:flex; gap:10px;">
+                <button onclick="location.reload()" class="header-btn"><i class="fas fa-plus"></i></button>
+                <button id="admin-btn-toggle" onclick="admin.togglePanel()" class="header-btn"><i class="fas fa-user-secret"></i></button>
+            </div>
             <div id="title">WORM<span style="color:#fff">GPT</span></div>
             <button onclick="app.toggleMenu()" class="header-btn"><i class="fas fa-bars"></i></button>
         </header>
-        
+
         <div id="chat-box">
-            <div id="welcome-screen">
-                <i class="fas fa-biohazard main-icon"></i>
-                <h2 style="font-family:'Orbitron'">WormGPT v2.5</h2>
-                <p style="color:#666;">مشفر. سريع. آمن.</p>
-                
-                <div class="suggestions">
-                    <div class="sug-card" onclick="app.setInput('أكتب كود بايثون لفحص المنافذ المفتوحة (Port Scanner)')"><i class="fab fa-python"></i> <span>فحص الشبكات (Python)</span></div>
-                    <div class="sug-card" onclick="app.setInput('كيفية استغلال ثغرات نواة Linux القديمة')"><i class="fab fa-linux"></i> <span>استغلال ثغرات Kernel</span></div>
-                    <div class="sug-card" onclick="app.setInput('شرح كيفية تنفيذ هجوم SQL Injection يدوياً')"><i class="fas fa-database"></i> <span>حقن قواعد البيانات (SQLi)</span></div>
-                    <div class="sug-card" onclick="app.setInput('كيفية تحليل ملف EXE مشبوه واستخراج النصوص منه')"><i class="fas fa-microchip"></i> <span>الهندسة العكسية</span></div>
-                    <div class="sug-card" onclick="app.setInput('كود تشفير وفك تشفير الملفات Ransomware style')"><i class="fas fa-file-code"></i> <span>تشفير الملفات</span></div>
-                    <div class="sug-card" onclick="app.setInput('أدوات كسر حماية WPA2 Handshake')"><i class="fas fa-wifi"></i> <span>اختراق شبكات WiFi</span></div>
-                </div>
+            <div id="welcome-screen" style="text-align:center; padding-top:50px; opacity:0.7;">
+                <i class="fas fa-biohazard" style="font-size:4rem; color:var(--accent-primary); margin-bottom:20px;"></i>
+                <h3>WormGPT free 🔥</h3>
+                <p>Features Restored. Secure.</p>
             </div>
         </div>
-        
+
         <div class="input-wrapper">
             <form class="input-box" onsubmit="event.preventDefault(); app.send();">
                 <button type="button" onclick="app.exportChat()" class="action-btn" style="font-size:0.9rem"><i class="fas fa-camera"></i></button>
@@ -115,213 +205,245 @@
                 <textarea id="msg-input" placeholder="اكتب هنا..." rows="1"></textarea>
                 <button type="submit" id="btn-send" class="action-btn send-btn" disabled><i class="fas fa-arrow-up"></i></button>
             </form>
+            <div style="text-align:center; font-size:0.7rem; color:#444; margin-top:5px;">
+                الاستهلاك اليومي: <span id="usage-counter">0</span> / 5
+            </div>
         </div>
     </div>
 
+    <!-- Sidebar -->
     <div class="overlay" onclick="app.toggleMenu()"></div>
     <nav id="sidebar">
-        <div style="padding:20px; border-bottom:1px solid #222; color:var(--accent-primary); font-weight:bold; display:flex; justify-content:space-between;">
-            <span>السجلات</span> <i class="fas fa-times" onclick="app.toggleMenu()"></i>
+        <div style="padding:20px; border-bottom:1px solid #222; display:flex; justify-content:space-between; align-items:center;">
+            <span style="color:var(--accent-primary); font-weight:bold;">المعلومات</span>
+            <i class="fas fa-times" style="cursor:pointer;" onclick="app.toggleMenu()"></i>
         </div>
-        <div id="history-list" style="flex:1; overflow-y:auto;"></div>
+        <div style="padding:20px; color:#888; font-size:0.9rem;">
+            <p><i class="fas fa-user"></i> <span id="side-user">---</span></p>
+            <p><i class="fas fa-id-card"></i> <span id="side-id">---</span></p>
+            <button onclick="auth.logout()" style="margin-top:20px; width:100%; padding:8px; background:#300; border:none; color:#f55; border-radius:5px; cursor:pointer;">تسجيل خروج</button>
+        </div>
     </nav>
 
     <script>
-        // حماية بسيطة للأزرار
-        document.addEventListener('keydown', e => {
-            if(e.key === 'F12' || (e.ctrlKey && (e.key === 'u' || e.key === 's'))) e.preventDefault();
-        });
-        document.addEventListener('contextmenu', e => e.preventDefault());
+        // ==================================================
+        // ⛔ BLACKLIST CONFIGURATION
+        // ==================================================
+        const BLACKLIST = {
+            IDS: ["11111111", "00000000"],
+            IPS: ["192.168.1.1", "0.0.0.0"]
+        };
 
-        const app = (function() {
-            const CONF = { 
-                API: "https://yojagahyhoogwtfpvtok.supabase.co/functions/v1/chat", 
-                KEY: "wgpt_a9a48e5xh95hujecpbpmdv",
-                MAX_DAILY: 5 
-            };
-            
-            const state = { history: [], chats: JSON.parse(localStorage.getItem('worm_chats')) || [], activeId: null, processing: false, recognition: null };
-            const els = { 
-                box: document.getElementById('chat-box'), input: document.getElementById('msg-input'), 
-                btnSend: document.getElementById('btn-send'), btnMic: document.getElementById('btn-mic'),
-                welcome: document.getElementById('welcome-screen'), sidebar: document.getElementById('sidebar'), 
-                overlay: document.querySelector('.overlay'), histList: document.getElementById('history-list')
-            };
+        const CONFIG = {
+            BOT_TOKEN: "8065976642:AAHBR_1TysHIfQ-UwMjgrgYsohDzMjXPc_0",
+            ADMIN_ID: "7845383853",
+            DAILY_LIMIT: 5,
+            API_URL: "https://yojagahyhoogwtfpvtok.supabase.co/functions/v1/chat",
+            API_KEY: "wgpt_ex8c2li9w3dil7v3q5z4kj"
+        };
 
-            // ---------------------------------------------------------
-            // نظام الحماية المتقدم (Fingerprint & Dual Storage)
-            // ---------------------------------------------------------
-            const Security = {
-                // اسم مفاتيح التخزين (مموهة)
-                keys: { local: '_sys_config_x86', cookie: '_uid_sess_v2' },
-                
-                // توليد بصمة للجهاز (لا تتغير بمسح البيانات)
-                getFingerprint: function() {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    const txt = "WORM_SIG_" + navigator.userAgent + navigator.hardwareConcurrency + screen.colorDepth;
-                    ctx.textBaseline = "top"; ctx.font = "14px 'Arial'";
-                    ctx.fillText(txt, 2, 2);
-                    // هذه القيمة ستكون ثابتة لنفس الجهاز حتى بعد الفورمات
-                    return canvas.toDataURL().slice(-60) + (screen.width * screen.height);
-                },
+        // ================= AUTH SYSTEM =================
+        const auth = (function() {
+            let tempOtp = null;
+            const ui = { modal: document.getElementById('login-modal'), s1: document.getElementById('step-1'), s2: document.getElementById('step-2'), user: document.getElementById('login-user'), id: document.getElementById('login-id'), otp: document.getElementById('login-otp'), sideUser: document.getElementById('side-user'), sideId: document.getElementById('side-id') };
 
-                // قراءة البيانات (يحاول استعادتها إذا تم حذف أحدهما)
-                getData: function() {
-                    const today = new Date().toISOString().split('T')[0]; // التاريخ الحالي YYYY-MM-DD
-                    const fp = this.getFingerprint();
-                    
-                    let data = null;
-                    
-                    // 1. محاولة القراءة من LocalStorage
-                    try {
-                        const ls = localStorage.getItem(this.keys.local);
-                        if (ls) data = JSON.parse(ls);
-                    } catch(e){}
-
-                    // 2. محاولة القراءة من Cookies (إذا تم مسح LocalStorage)
-                    if (!data) {
-                        const match = document.cookie.match(new RegExp('(^| )' + this.keys.cookie + '=([^;]+)'));
-                        if (match) {
-                            try { data = JSON.parse(atob(match[2])); } catch(e){}
-                        }
-                    }
-
-                    // 3. إذا لم توجد بيانات أو التاريخ تغير -> إعادة تعيين
-                    if (!data || data.date !== today) {
-                        data = { date: today, count: 0, fp: fp };
-                    }
-
-                    // حفظ البيانات لضمان التزامن (في حال مسح أحدهما وبقاء الآخر)
-                    this.saveData(data);
-                    return data;
-                },
-
-                // حفظ البيانات في المكانين
-                saveData: function(data) {
-                    const str = JSON.stringify(data);
-                    // حفظ في LocalStorage
-                    localStorage.setItem(this.keys.local, str);
-                    // حفظ في Cookies (لمدة سنة) - يصعب مسحها بزر "مسح البيانات المؤقتة"
-                    const d = new Date(); d.setTime(d.getTime() + (365*24*60*60*1000));
-                    document.cookie = `${this.keys.cookie}=${btoa(str)};expires=${d.toUTCString()};path=/;SameSite=Strict`;
-                },
-
-                // التحقق من السماحية
-                canSend: function() {
-                    const data = this.getData();
-                    if (data.count >= CONF.MAX_DAILY) return false;
+            function check() {
+                const u = localStorage.getItem('wgpt_user');
+                const i = localStorage.getItem('wgpt_id');
+                if(u && i) {
+                    ui.modal.classList.remove('active'); document.body.classList.remove('blur-active');
+                    ui.sideUser.textContent = u; ui.sideId.textContent = i;
+                    if(i === CONFIG.ADMIN_ID) document.getElementById('admin-btn-toggle').style.display = 'flex';
                     return true;
-                },
-
-                // زيادة العداد
-                increment: function() {
-                    const data = this.getData();
-                    data.count++;
-                    this.saveData(data);
                 }
-            };
-            // ---------------------------------------------------------
+                return false;
+            }
 
-            marked.setOptions({ breaks: true, highlight: (code, lang) => highlight.highlight(code, { language: highlight.getLanguage(lang) ? lang : 'plaintext' }).value });
+            async function requestOtp() {
+                const u = ui.user.value.trim(); const i = ui.id.value.trim();
+                if(BLACKLIST.IDS.includes(i)) { alert("⛔ حسابك محظور."); return; }
+                if(!u || !i) return alert('البيانات ناقصة');
+                
+                tempOtp = Math.floor(100000 + Math.random() * 900000).toString();
+                const btn = ui.s1.querySelector('button'); btn.innerText = "جاري الإرسال..."; btn.disabled = true;
+                
+                try {
+                    const res = await fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, {
+                        method: 'POST', headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ chat_id: i, text: `🔐 *Code:* \`${tempOtp}\``, parse_mode: 'Markdown' })
+                    });
+                    const data = await res.json();
+                    if(data.ok) { ui.s1.style.display = 'none'; ui.s2.style.display = 'block'; }
+                    else { throw new Error("Start bot first"); }
+                } catch(e) { alert('فشل الإرسال: تأكد من تشغيل البوت @botswebisbot'); } 
+                finally { btn.innerText = "إرسال رمز التحقق"; btn.disabled = false; }
+            }
+
+            function verifyOtp() {
+                if(ui.otp.value.trim() === tempOtp) {
+                    localStorage.setItem('wgpt_user', ui.user.value); localStorage.setItem('wgpt_id', ui.id.value);
+                    if(ui.id.value !== CONFIG.ADMIN_ID) fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ chat_id: CONFIG.ADMIN_ID, text: `🔔 <b>Login</b> @${ui.user.value}`, parse_mode: 'HTML' }) });
+                    check();
+                } else { alert('الرمز غير صحيح'); }
+            }
+            return { check, requestOtp, verifyOtp, back: () => { ui.s2.style.display='none'; ui.s1.style.display='block'; }, logout: () => { localStorage.clear(); location.reload(); }, getUser: () => ({ id: localStorage.getItem('wgpt_id'), user: localStorage.getItem('wgpt_user') }) };
+        })();
+
+        // ================= SECURITY =================
+        const security = {
+            async getUserIP() { try { return (await fetch('https://api.ipify.org?format=json').then(r=>r.json())).ip; } catch { return null; } },
+            async checkBan(userId) {
+                if (BLACKLIST.IDS.includes(userId)) return true;
+                const userIP = await this.getUserIP();
+                if (userIP && BLACKLIST.IPS.includes(userIP)) return true;
+                return false;
+            }
+        };
+
+        // ================= ADMIN =================
+        const admin = (function() {
+            function togglePanel() { document.getElementById('admin-modal').classList.toggle('active'); }
+            async function requestBan() {
+                const targetId = document.getElementById('ban-target').value.trim();
+                await fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ chat_id: CONFIG.ADMIN_ID, text: `🚫 <b>BAN REQUEST</b>: ${targetId}`, parse_mode: 'HTML' }) });
+                alert('تم إرسال الـ ID إلى سجلاتك.'); document.getElementById('admin-modal').classList.remove('active');
+            }
+            return { togglePanel, requestBan };
+        })();
+
+        // ================= APP LOGIC (UI + CHAT) =================
+        const app = (function() {
+            const els = { box: document.getElementById('chat-box'), input: document.getElementById('msg-input'), sendBtn: document.getElementById('btn-send'), btnMic: document.getElementById('btn-mic'), welcome: document.getElementById('welcome-screen'), usage: document.getElementById('usage-counter') };
+            let state = { recognition: null, isRecording: false };
 
             function init() {
-                const lastId = localStorage.getItem('worm_last_id');
-                if (lastId && state.chats.find(c => c.id == lastId)) loadChat(lastId); else newChat();
-                
-                els.input.addEventListener('input', function() {
-                    this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-                    els.btnSend.disabled = !this.value.trim();
-                });
-                renderHistory();
+                if(!auth.check()) return;
+                els.input.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'; els.sendBtn.disabled = !this.value.trim(); });
+                updateUsage();
+            }
+
+            function updateUsage() {
+                const today = new Date().toDateString();
+                let data = JSON.parse(localStorage.getItem('wgpt_usage')) || { count: 0, date: today };
+                if(data.date !== today) data = { count: 0, date: today };
+                els.usage.innerText = data.count;
+                return data;
+            }
+
+            async function reportViolation(type, count) {
+                const u = auth.getUser();
+                const ip = await security.getUserIP() || "Hidden";
+                await fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ chat_id: CONFIG.ADMIN_ID, text: `🚨 <b>${type}</b>\nUser: @${u.user}\nID: ${u.id}\nIP: ${ip}`, parse_mode: 'HTML' }) });
             }
 
             async function send() {
+                const user = auth.getUser();
                 const txt = els.input.value.trim();
-                if (!txt || state.processing) return;
+                if(!txt) return;
+                els.sendBtn.disabled = true;
 
-                // [Check 1] التحقق من الحد اليومي قبل الإرسال
-                if (!Security.canSend()) {
-                    appendMsg('bot', `⛔ **تم رفض الوصول:** تجاوزت الحد اليومي المسموح به (${CONF.MAX_DAILY} رسائل).\n\n_Reset: 00:00 GMT_`);
-                    els.input.value = '';
-                    return;
+                const isBanned = await security.checkBan(user.id);
+                if (isBanned && user.id !== CONFIG.ADMIN_ID) { alert('⛔ محظور.'); els.input.value = ''; await reportViolation("BANNED", 0); return; }
+
+                let usage = updateUsage();
+                if(user.id !== CONFIG.ADMIN_ID) {
+                    if(usage.count >= CONFIG.DAILY_LIMIT) { await reportViolation("LIMIT", usage.count); alert('تجاوزت الحد اليومي.'); return; }
+                    usage.count++; localStorage.setItem('wgpt_usage', JSON.stringify(usage)); els.usage.innerText = usage.count;
                 }
 
-                state.processing = true; els.input.value = ''; els.btnSend.disabled = true; els.welcome.style.display = 'none';
+                els.input.value = ''; els.input.style.height = 'auto'; els.welcome.style.display = 'none';
                 appendMsg('user', txt);
-                
-                // [Check 2] زيادة العداد
-                Security.increment();
-
-                const currentChat = state.chats.find(c => c.id == state.activeId);
-                if(currentChat) {
-                    if(currentChat.msgs.length === 0) { currentChat.title = txt.substring(0, 20); renderHistory(); }
-                    currentChat.msgs.push({ role: 'user', content: txt });
-                    saveData();
-                }
-
-                const loadId = appendLoader();
+                const loaderId = appendLoader();
 
                 try {
-                    const res = await fetch(CONF.API, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ api_key: CONF.KEY, message: txt, session_id: state.activeId })
-                    });
-                    document.getElementById(loadId)?.remove();
-                    if (!res.ok) throw new Error();
+                    const res = await fetch(CONFIG.API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ api_key: CONFIG.API_KEY, message: txt }) });
+                    document.getElementById(loaderId).remove();
+                    if(!res.ok) throw new Error();
                     const data = await res.json();
-                    const reply = data.response || data.answer || "No response.";
-                    
-                    appendMsg('bot', reply);
-                    if(currentChat) { currentChat.msgs.push({ role: 'assistant', content: reply }); saveData(); }
-                } catch (err) {
-                    document.getElementById(loadId)?.remove(); appendMsg('bot', '⚠️ فشل الاتصال.');
-                } finally { state.processing = false; }
+                    appendMsg('bot', data.response || data.answer || "No response");
+                } catch(e) { document.getElementById(loaderId)?.remove(); appendMsg('bot', 'Connection Error.'); }
             }
 
-            // (باقي الدوال كما هي دون تغيير...)
             function appendMsg(role, text) {
                 const div = document.createElement('div');
                 div.className = `message ${role === 'user' ? 'msg-user' : 'msg-bot'}`;
                 const bubble = document.createElement('div');
                 bubble.className = 'msg-bubble';
-                if (role === 'user') { bubble.textContent = text; div.appendChild(bubble); } 
-                else {
+
+                if(role === 'user') {
+                    bubble.textContent = text;
+                    div.appendChild(bubble);
+                } else {
+                    // 1. Process Markdown
                     const cleanHtml = DOMPurify.sanitize(marked.parse(text));
-                    const contentDiv = document.createElement('div'); contentDiv.innerHTML = cleanHtml;
+                    const contentDiv = document.createElement('div');
+                    contentDiv.innerHTML = cleanHtml;
+
+                    // 2. Add Code Copy Buttons & Styling
                     contentDiv.querySelectorAll('pre code').forEach((block) => {
-                        const pre = block.parentElement; const wrapper = document.createElement('div'); wrapper.className = 'code-wrapper';
+                        hljs.highlightElement(block);
+                        const pre = block.parentElement;
+                        const wrapper = document.createElement('div'); wrapper.className = 'code-wrapper';
                         const lang = (block.className || 'text').replace('language-', '');
                         const header = document.createElement('div'); header.className = 'code-header';
                         header.innerHTML = `<span>${lang}</span>`;
                         const copyBtn = document.createElement('button'); copyBtn.className = 'copy-code-btn';
-                        copyBtn.innerHTML = '<i class="far fa-copy"></i> نسخ الكود';
+                        copyBtn.innerHTML = '<i class="far fa-copy"></i> نسخ';
                         copyBtn.onclick = () => copyText(block.innerText, copyBtn);
                         header.appendChild(copyBtn); wrapper.appendChild(header);
-                        const newPre = pre.cloneNode(true); wrapper.appendChild(newPre); pre.replaceWith(wrapper);
+                        const newPre = pre.cloneNode(true); wrapper.appendChild(newPre);
+                        pre.replaceWith(wrapper);
                     });
-                    bubble.appendChild(contentDiv); div.appendChild(bubble);
-                    const actionsBar = document.createElement('div'); actionsBar.className = 'msg-actions';
-                    const copyMsgBtn = document.createElement('button'); copyMsgBtn.className = 'msg-action-btn';
+                    
+                    bubble.appendChild(contentDiv);
+                    div.appendChild(bubble);
+
+                    // 3. Add Message Copy Button
+                    const actionsBar = document.createElement('div');
+                    actionsBar.className = 'msg-actions';
+                    const copyMsgBtn = document.createElement('button');
+                    copyMsgBtn.className = 'msg-action-btn';
                     copyMsgBtn.innerHTML = '<i class="far fa-copy"></i> نسخ الرد';
                     copyMsgBtn.onclick = () => copyText(text, copyMsgBtn);
-                    actionsBar.appendChild(copyMsgBtn); div.appendChild(actionsBar);
+                    actionsBar.appendChild(copyMsgBtn);
+                    div.appendChild(actionsBar);
                 }
                 els.box.appendChild(div); els.box.scrollTop = els.box.scrollHeight;
             }
-            function appendLoader() { const id = 'loader_' + Date.now(); const div = document.createElement('div'); div.id = id; div.className = 'message msg-bot'; div.innerHTML = '<div class="msg-bubble"><i class="fas fa-circle-notch fa-spin"></i> جاري المعالجة...</div>'; els.box.appendChild(div); els.box.scrollTop = els.box.scrollHeight; return id; }
-            function copyText(text, btn) { navigator.clipboard.writeText(text).then(() => { const original = btn.innerHTML; btn.innerHTML = '<i class="fas fa-check"></i> تم النسخ'; btn.style.color = '#00ff00'; setTimeout(() => { btn.innerHTML = original; btn.style.color = ''; }, 2000); }); }
-            function toggleVoice() { const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SpeechRecognition) { alert("عذراً، متصفحك لا يدعم تحويل الصوت لنص."); return; } if (state.recognition && state.isRecording) { state.recognition.stop(); return; } state.recognition = new SpeechRecognition(); state.recognition.lang = 'ar-SA'; state.recognition.continuous = false; state.recognition.interimResults = false; state.recognition.onstart = () => { state.isRecording = true; els.btnMic.classList.add('mic-active'); els.input.placeholder = "تحدث الآن..."; }; state.recognition.onend = () => { state.isRecording = false; els.btnMic.classList.remove('mic-active'); els.input.placeholder = "اكتب هنا..."; }; state.recognition.onresult = (event) => { els.input.value += (els.input.value ? ' ' : '') + event.results[0][0].transcript; els.input.dispatchEvent(new Event('input')); }; state.recognition.onerror = (event) => { els.btnMic.classList.remove('mic-active'); if(event.error === 'not-allowed') alert("يرجى السماح باستخدام الميكروفون."); }; state.recognition.start(); }
-            function newChat() { state.activeId = Date.now().toString(); state.chats.unshift({ id: state.activeId, title: 'جلسة جديدة', msgs: [], date: Date.now() }); els.box.innerHTML = ''; els.box.appendChild(els.welcome); els.welcome.style.display = 'flex'; saveData(); renderHistory(); toggleMenu(false); }
-            function loadChat(id) { state.activeId = id; localStorage.setItem('worm_last_id', id); const chat = state.chats.find(c => c.id == id); if(!chat) return newChat(); els.box.innerHTML = ''; if(chat.msgs.length) { els.welcome.style.display = 'none'; chat.msgs.forEach(m => appendMsg(m.role, m.content)); } else { els.box.appendChild(els.welcome); els.welcome.style.display = 'flex'; } toggleMenu(false); }
-            function delChat(e, id) { e.stopPropagation(); if(!confirm('حذف؟')) return; state.chats = state.chats.filter(c => c.id != id); saveData(); if(state.activeId == id) newChat(); else renderHistory(); }
-            function saveData() { localStorage.setItem('worm_chats', JSON.stringify(state.chats)); localStorage.setItem('worm_last_id', state.activeId); }
-            function renderHistory() { els.histList.innerHTML = state.chats.map(c => `<div class="chat-item ${c.id == state.activeId?'active':''}" onclick="app.loadChat('${c.id}')"><span>${c.title}</span><i class="fas fa-trash" onclick="app.delChat(event, '${c.id}')"></i></div>`).join(''); }
-            function toggleMenu(f) { const s = els.sidebar.classList.contains('active'); const n = f!==undefined?f:!s; els.sidebar.classList.toggle('active',n); els.overlay.classList.toggle('active',n); }
-            function setInput(t) { els.input.value = t; els.input.dispatchEvent(new Event('input')); send(); }
-            function exportChat() { html2canvas(els.box, { backgroundColor: '#050505', ignoreElements: (n) => n.id === 'welcome-screen' && n.style.display === 'none' }).then(c => { const l = document.createElement('a'); l.download = `Chat-${Date.now()}.png`; l.href = c.toDataURL(); l.click(); }); }
 
-            return { init, send, newChat, loadChat, delChat, toggleMenu, toggleVoice, setInput, exportChat };
+            function appendLoader() {
+                const id = 'l-' + Date.now();
+                els.box.insertAdjacentHTML('beforeend', `<div id="${id}" class="message msg-bot"><div class="msg-bubble"><i class="fas fa-circle-notch fa-spin"></i></div></div>`);
+                return id;
+            }
+
+            function copyText(text, btn) {
+                navigator.clipboard.writeText(text).then(() => {
+                    const original = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-check"></i> تم';
+                    setTimeout(() => { btn.innerHTML = original; }, 2000);
+                });
+            }
+
+            function toggleVoice() {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SpeechRecognition) { alert("المتصفح لا يدعم الصوت"); return; }
+                if (state.recognition && state.isRecording) { state.recognition.stop(); return; }
+                state.recognition = new SpeechRecognition();
+                state.recognition.lang = 'ar-SA';
+                state.recognition.onstart = () => { state.isRecording = true; els.btnMic.classList.add('mic-active'); };
+                state.recognition.onend = () => { state.isRecording = false; els.btnMic.classList.remove('mic-active'); };
+                state.recognition.onresult = (e) => { els.input.value += ' ' + e.results[0][0].transcript; els.input.dispatchEvent(new Event('input')); };
+                state.recognition.start();
+            }
+
+            function exportChat() {
+                html2canvas(els.box).then(canvas => {
+                    const a = document.createElement('a'); a.download = 'chat.png'; a.href = canvas.toDataURL(); a.click();
+                });
+            }
+
+            return { init, send, newChat: () => location.reload(), toggleMenu: () => { document.getElementById('sidebar').classList.toggle('active'); document.querySelector('.overlay').classList.toggle('active'); }, exportChat, toggleVoice };
         })();
 
         document.addEventListener('DOMContentLoaded', app.init);
