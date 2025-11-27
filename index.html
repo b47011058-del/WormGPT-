@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>WormGPT free 🔥 (Admin Control)</title>
+    <title>WormGPT Elite 🛡️</title>
 
     <!-- الخطوط والأيقونات -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&family=Fira+Code:wght@400;600&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
@@ -17,13 +17,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
-        /* ==================== CSS VARIABLES ==================== */
+        /* ==================== CSS VARIABLES & RESET ==================== */
         :root {
             --bg-core: #050505;
             --accent-primary: #ff0033;
             --accent-glow: rgba(255, 0, 51, 0.4);
             --text-main: #e0e0e0;
             --admin-color: #00ff88;
+            --glass: rgba(20, 20, 20, 0.8);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
@@ -34,107 +35,120 @@
             user-select: none;
         }
 
+        /* تأثير الخطوط الخلفية */
         body::after {
             content: ""; position: absolute; inset: 0;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
             background-size: 100% 4px; pointer-events: none; z-index: 9999; opacity: 0.6;
         }
 
+        /* ==================== LAYOUT ==================== */
         #chat-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; z-index: 10; transition: filter 0.3s; }
-        body.blur-active #chat-wrapper { filter: blur(5px); pointer-events: none; }
+        body.blur-active #chat-wrapper { filter: blur(8px); pointer-events: none; }
 
         .chat-header {
             padding: 15px; display: flex; justify-content: space-between; align-items: center;
             background: rgba(10, 0, 0, 0.95); border-bottom: 1px solid #330000;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
         }
-        #title { font-family: 'Orbitron'; font-size: 1.2rem; color: var(--accent-primary); text-shadow: 0 0 10px var(--accent-glow); }
+        #title { font-family: 'Orbitron'; font-size: 1.2rem; color: var(--accent-primary); text-shadow: 0 0 10px var(--accent-glow); letter-spacing: 2px; }
+        
         .header-btn { 
             width: 40px; height: 40px; background: rgba(255,255,255,0.05); 
-            border: 1px solid rgba(255,255,255,0.1); color: #ccc; border-radius: 8px; 
-            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.1); color: #ccc; border-radius: 10px; 
+            display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;
         }
+        .header-btn:active { transform: scale(0.95); }
         
         #admin-btn-toggle { display: none; border-color: var(--admin-color); color: var(--admin-color); box-shadow: 0 0 10px rgba(0, 255, 136, 0.2); }
 
         #chat-box { flex: 1; overflow-y: auto; padding: 15px; scroll-behavior: smooth; }
         
-        .message { max-width: 92%; margin-bottom: 20px; display: flex; flex-direction: column; }
-        .msg-bubble { padding: 12px 16px; border-radius: 12px; font-size: 0.95rem; line-height: 1.6; user-select: text; }
+        /* الرسائل */
+        .message { max-width: 92%; margin-bottom: 20px; display: flex; flex-direction: column; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .msg-bubble { padding: 12px 16px; border-radius: 15px; font-size: 0.95rem; line-height: 1.6; user-select: text; position: relative; overflow: hidden; }
         
         .msg-user { align-self: flex-end; margin-left: auto; }
-        .msg-user .msg-bubble { background: linear-gradient(145deg, #80001a, #4d000f); color: #fff; border-bottom-left-radius: 2px; }
+        .msg-user .msg-bubble { background: linear-gradient(145deg, #80001a, #4d000f); color: #fff; border-bottom-left-radius: 4px; border: 1px solid #660011; }
         
         .msg-bot { align-self: flex-start; margin-right: auto; width: 100%; }
-        .msg-bot .msg-bubble { background: #111; border: 1px solid #2a2a2a; border-bottom-right-radius: 2px; }
+        .msg-bot .msg-bubble { background: #111; border: 1px solid #333; border-bottom-right-radius: 4px; color: #ddd; }
 
-        .msg-actions {
-            display: flex; justify-content: flex-end; gap: 10px; padding: 5px 10px;
-            margin-top: 5px; opacity: 0.7; transition: opacity 0.3s;
-        }
-        .msg-action-btn {
-            background: none; border: none; color: #888; font-size: 0.8rem; cursor: pointer;
-            display: flex; align-items: center; gap: 5px; font-family: 'Cairo';
-        }
-        .msg-action-btn:hover { color: var(--accent-primary); }
-
-        .code-wrapper { margin: 12px 0; border: 1px solid #333; border-radius: 6px; overflow: hidden; background: #1e1e1e; direction: ltr; text-align: left; }
+        /* الكود */
+        .code-wrapper { margin: 12px 0; border: 1px solid #444; border-radius: 8px; overflow: hidden; background: #151515; direction: ltr; text-align: left; }
         .code-header {
             display: flex; justify-content: space-between; align-items: center; padding: 8px 12px;
-            background: #252525; border-bottom: 1px solid #333; font-family: 'Fira Code'; font-size: 0.8rem; color: #aaa;
+            background: #222; border-bottom: 1px solid #444; font-family: 'Fira Code'; font-size: 0.8rem; color: #aaa;
         }
         .copy-code-btn { 
             border: none; background: rgba(255,255,255,0.1); color: #fff; cursor: pointer; 
-            font-size: 0.75rem; padding: 4px 8px; border-radius: 4px;
+            font-size: 0.75rem; padding: 4px 10px; border-radius: 4px; transition: 0.2s;
         }
         .copy-code-btn:hover { background: var(--accent-primary); }
         pre { padding: 15px; overflow-x: auto; margin: 0; }
         code { font-family: 'Fira Code'; font-size: 0.85rem; }
 
-        .input-wrapper { background: rgba(0,0,0,0.95); border-top: 1px solid #222; padding: 10px; }
-        .input-box { display: flex; align-items: flex-end; gap: 10px; background: #151515; border-radius: 20px; padding: 8px 15px; border: 1px solid #333; }
-        textarea { flex: 1; background: transparent; border: none; color: #fff; font-family: 'Cairo'; resize: none; font-size: 1rem; max-height: 100px; }
-        .action-btn { background: transparent; border: none; color: #666; font-size: 1.2rem; cursor: pointer; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
-        .send-btn { background: var(--accent-primary); color: white; }
-        .send-btn:disabled { background: #333; color: #555; }
+        /* منطقة الإدخال */
+        .input-wrapper { background: rgba(0,0,0,0.95); border-top: 1px solid #222; padding: 12px; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+        .input-box { display: flex; align-items: flex-end; gap: 8px; background: #111; border-radius: 25px; padding: 8px 12px; border: 1px solid #333; transition: border-color 0.3s; }
+        .input-box:focus-within { border-color: var(--accent-primary); }
         
-        .mic-active { color: #ff0033 !important; animation: micPulse 1s infinite; }
-        @keyframes micPulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+        textarea { flex: 1; background: transparent; border: none; color: #fff; font-family: 'Cairo'; resize: none; font-size: 1rem; max-height: 120px; padding: 8px 0; }
+        .action-btn { background: transparent; border: none; color: #666; font-size: 1.2rem; cursor: pointer; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: 0.2s; }
+        .action-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .send-btn { background: var(--accent-primary); color: white; margin-left: 5px; }
+        .send-btn:disabled { background: #333; color: #555; transform: none; }
+        
+        .mic-active { color: #ff0033 !important; animation: micPulse 1.5s infinite; }
+        @keyframes micPulse { 0% { box-shadow: 0 0 0 0 rgba(255, 0, 51, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 0, 51, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 0, 51, 0); } }
 
+        /* النوافذ المنبثقة */
         #login-modal, #admin-modal {
             position: fixed; inset: 0; z-index: 2000;
             display: none; align-items: center; justify-content: center;
-            background: rgba(0,0,0,0.9); backdrop-filter: blur(10px);
+            background: rgba(0,0,0,0.95); backdrop-filter: blur(15px);
         }
         #login-modal.active, #admin-modal.active { display: flex; }
         
         .modal-card {
-            background: #111; border: 1px solid #333; border-radius: 15px;
-            width: 90%; max-width: 400px; padding: 25px; text-align: center;
-            box-shadow: 0 0 30px rgba(255,0,51,0.15);
+            background: #0a0a0a; border: 1px solid #333; border-radius: 20px;
+            width: 90%; max-width: 400px; padding: 30px; text-align: center;
+            box-shadow: 0 0 50px rgba(255,0,51,0.1); position: relative;
         }
-        .modal-input {
-            width: 100%; background: #050505; border: 1px solid #333;
-            color: #fff; padding: 12px; border-radius: 8px; margin-bottom: 15px;
-            font-family: 'Cairo'; text-align: center;
-        }
-        .modal-btn {
-            width: 100%; background: var(--accent-primary); color: #fff;
-            border: none; padding: 12px; border-radius: 8px; cursor: pointer;
-            font-family: 'Cairo'; font-weight: bold;
+        .modal-card::before {
+            content: ""; position: absolute; top: -1px; left: -1px; right: -1px; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
         }
         
-        /* زر خاص بالحظر */
-        .btn-ban { background: #550000; color: #ff9999; border: 1px solid #ff3333; }
-        .btn-ban:hover { background: #880000; }
-
-        #sidebar { 
-            position: fixed; top: 0; right: 0; width: 80%; max-width: 300px; height: 100%; 
-            background: #0a0a0a; border-left: 1px solid #222; z-index: 100; 
-            transform: translateX(100%); transition: 0.3s;
+        .modal-input {
+            width: 100%; background: #151515; border: 1px solid #333;
+            color: #fff; padding: 15px; border-radius: 12px; margin-bottom: 15px;
+            font-family: 'Cairo'; text-align: center; font-size: 1rem; transition: 0.3s;
         }
-        #sidebar.active { transform: translateX(0); }
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 90; display: none; }
-        .overlay.active { display: block; }
+        .modal-input:focus { border-color: var(--accent-primary); box-shadow: 0 0 15px rgba(255,0,51,0.1); }
+        
+        .modal-btn {
+            width: 100%; background: var(--accent-primary); color: #fff;
+            border: none; padding: 15px; border-radius: 12px; cursor: pointer;
+            font-family: 'Cairo'; font-weight: bold; font-size: 1rem;
+            box-shadow: 0 5px 15px rgba(255,0,51,0.2); transition: 0.3s;
+        }
+        .modal-btn:active { transform: scale(0.98); }
+        
+        .btn-ban { background: #440000; color: #ffcccc; border: 1px solid #aa0000; }
+        
+        /* القائمة الجانبية */
+        #sidebar { 
+            position: fixed; top: 0; right: 0; width: 85%; max-width: 320px; height: 100%; 
+            background: #0a0a0a; border-left: 1px solid #222; z-index: 100; 
+            transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding-top: env(safe-area-inset-top);
+        }
+        #sidebar.active { transform: translateX(0); box-shadow: -10px 0 50px rgba(0,0,0,0.8); }
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 90; opacity: 0; pointer-events: none; transition: 0.3s; }
+        .overlay.active { opacity: 1; pointer-events: auto; }
     </style>
 </head>
 <body class="blur-active">
@@ -142,44 +156,53 @@
     <!-- شاشة الدخول -->
     <div id="login-modal" class="active">
         <div class="modal-card">
-            <i class="fas fa-fingerprint" style="font-size: 3rem; color: var(--accent-primary); margin-bottom: 15px;"></i>
-            <h2>تسجيل الدخول</h2>
+            <div style="margin-bottom: 20px;">
+                <i class="fas fa-shield-virus" style="font-size: 3.5rem; color: var(--accent-primary);"></i>
+            </div>
+            <h2 style="margin-bottom: 5px;">تأكيد الهوية</h2>
+            <p style="color:#666; font-size: 0.8rem; margin-bottom: 25px;">WormGPT Secure Access</p>
+            
             <div id="step-1">
-                <input type="text" id="login-user" class="modal-input" placeholder="اسم المستخدم (تلجرام)">
+                <input type="text" id="login-user" class="modal-input" placeholder="اسم المستخدم (بدون @)">
                 <input type="number" id="login-id" class="modal-input" placeholder="Telegram ID">
                 <button onclick="auth.requestOtp()" class="modal-btn">إرسال رمز التحقق</button>
-                <p style="margin-top:10px; font-size:0.8rem; color:#666">يجب الضغط على <b>/start</b> في البوت أولاً</p>
+                <p style="margin-top:15px; font-size:0.75rem; color:#444">
+                    <i class="fab fa-telegram"></i> يجب تشغيل البوت أولاً
+                </p>
             </div>
+            
             <div id="step-2" style="display:none;">
-                <p style="color:#aaa; margin-bottom:10px;">تم إرسال الرمز إلى تيليجرام</p>
-                <input type="text" id="login-otp" class="modal-input" placeholder="أدخل الكود">
-                <button onclick="auth.verifyOtp()" class="modal-btn">دخول</button>
-                <button onclick="auth.back()" style="background:none; border:none; color:#666; margin-top:10px; cursor:pointer">رجوع</button>
+                <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; margin-bottom:15px;">
+                    <p style="color:#aaa; font-size:0.8rem;">تم إرسال الرمز إلى حسابك</p>
+                </div>
+                <input type="tel" id="login-otp" class="modal-input" placeholder="XXXXXX" style="letter-spacing: 5px; font-weight: bold;">
+                <button onclick="auth.verifyOtp()" class="modal-btn">دخول للنظام</button>
+                <button onclick="auth.back()" style="background:none; border:none; color:#666; margin-top:15px; cursor:pointer; font-size:0.9rem;">تغيير البيانات</button>
             </div>
         </div>
     </div>
 
-    <!-- لوحة الأدمن (محدثة) -->
+    <!-- لوحة الأدمن -->
     <div id="admin-modal">
         <div class="modal-card" style="border-color:var(--admin-color)">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                <h2 style="color:var(--admin-color)">ADMIN_PANEL</h2>
-                <i class="fas fa-times" style="cursor:pointer; color:#666" onclick="document.getElementById('admin-modal').classList.remove('active')"></i>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2 style="color:var(--admin-color); font-family:'Orbitron'">ADMIN_ROOT</h2>
+                <i class="fas fa-times" style="cursor:pointer; color:#fff" onclick="document.getElementById('admin-modal').classList.remove('active')"></i>
             </div>
             
-            <div style="text-align:right; margin-bottom:15px; color:#aaa; font-size:0.85rem; border-bottom:1px solid #333; padding-bottom:10px;">
-                <p>1. أدخل الـ ID لحظره فوراً.</p>
-                <p>2. الحظر هنا دائم (Blacklist).</p>
+            <div style="text-align:right; margin-bottom:20px; color:#aaa; font-size:0.8rem; background:#111; padding:10px; border-radius:8px; border:1px solid #333;">
+                <p>⚠️ <b>تحذير:</b> الحظر هنا نهائي ويتم تخزينه في الذاكرة العميقة للمستخدم.</p>
             </div>
 
-            <input type="number" id="ban-target" class="modal-input" style="border-color:var(--accent-primary); color: #ffcccc;" placeholder="أدخل ID المستخدم للحظر">
+            <input type="number" id="ban-target" class="modal-input" style="border-color:var(--accent-primary); color: #ffcccc;" placeholder="Target ID">
             
             <button onclick="admin.executeBan()" class="modal-btn btn-ban">
-                <i class="fas fa-gavel"></i> حظر المستخدم (Manual Ban)
+                <i class="fas fa-ban"></i> تنفيذ الحظر (Deep Ban)
             </button>
             
-            <div style="margin-top:15px; font-size:0.75rem; color:#555;">
-                قائمة المحظورين المخزنة: <span id="banned-count">0</span>
+            <div style="margin-top:20px; display:flex; justify-content:space-between; font-size:0.75rem; color:#555;">
+                <span>System Status: Online</span>
+                <span>Version: 3.1.0 (DeepVault)</span>
             </div>
         </div>
     </div>
@@ -188,30 +211,37 @@
     <div id="chat-wrapper">
         <header class="chat-header">
             <div style="display:flex; gap:10px;">
-                <button onclick="location.reload()" class="header-btn"><i class="fas fa-plus"></i></button>
-                <button id="admin-btn-toggle" onclick="admin.togglePanel()" class="header-btn"><i class="fas fa-user-secret"></i></button>
+                <button onclick="location.reload()" class="header-btn"><i class="fas fa-redo-alt"></i></button>
+                <button id="admin-btn-toggle" onclick="admin.togglePanel()" class="header-btn"><i class="fas fa-user-shield"></i></button>
             </div>
             <div id="title">WORM<span style="color:#fff">GPT</span></div>
             <button onclick="app.toggleMenu()" class="header-btn"><i class="fas fa-bars"></i></button>
         </header>
 
         <div id="chat-box">
-            <div id="welcome-screen" style="text-align:center; padding-top:50px; opacity:0.7;">
-                <i class="fas fa-biohazard" style="font-size:4rem; color:var(--accent-primary); margin-bottom:20px;"></i>
-                <h3>WormGPT free 🔥</h3>
-                <p>Limit: 10 / Day (Auto Reset)</p>
+            <div id="welcome-screen" style="text-align:center; padding-top:60px; opacity:0.6;">
+                <div style="width:80px; height:80px; background:var(--accent-primary); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; box-shadow:0 0 30px var(--accent-glow);">
+                    <i class="fas fa-biohazard" style="font-size:2.5rem; color:#fff;"></i>
+                </div>
+                <h3 style="font-family:'Orbitron'; margin-bottom:10px;">WormGPT </h3>
+                <p style="font-size:0.9rem;">Secure & Encrypted Environment</p>
+                <div style="margin-top:20px; font-size:0.8rem; background:#111; display:inline-block; padding:5px 15px; border-radius:20px; border:1px solid #333;">
+                    Limit: 10 Messages / Day
+                </div>
             </div>
         </div>
 
         <div class="input-wrapper">
             <form class="input-box" onsubmit="event.preventDefault(); app.send();">
-                <button type="button" onclick="app.exportChat()" class="action-btn" style="font-size:0.9rem"><i class="fas fa-camera"></i></button>
+                <button type="button" onclick="app.exportChat()" class="action-btn"><i class="fas fa-camera"></i></button>
                 <button type="button" id="btn-mic" onclick="app.toggleVoice()" class="action-btn"><i class="fas fa-microphone"></i></button>
-                <textarea id="msg-input" placeholder="اكتب هنا..." rows="1"></textarea>
-                <button type="submit" id="btn-send" class="action-btn send-btn" disabled><i class="fas fa-arrow-up"></i></button>
+                <textarea id="msg-input" placeholder="أدخل رسالتك هنا..." rows="1"></textarea>
+                <button type="submit" id="btn-send" class="action-btn send-btn" disabled><i class="fas fa-paper-plane"></i></button>
             </form>
-            <div style="text-align:center; font-size:0.7rem; color:#444; margin-top:5px;">
-                الاستهلاك اليومي: <span id="usage-counter">0</span> / 10
+            <div style="text-align:center; font-size:0.7rem; color:#555; margin-top:8px;">
+                العداد اليومي: <span id="usage-counter" style="color:var(--text-main); font-weight:bold;">0</span> / 10
+                <span style="margin:0 5px;">|</span>
+                إعادة التعيين: 12:00 AM
             </div>
         </div>
     </div>
@@ -219,419 +249,408 @@
     <!-- القائمة الجانبية -->
     <div class="overlay" onclick="app.toggleMenu()"></div>
     <nav id="sidebar">
-        <div style="padding:20px; border-bottom:1px solid #222; display:flex; justify-content:space-between; align-items:center;">
-            <span style="color:var(--accent-primary); font-weight:bold;">المعلومات</span>
-            <i class="fas fa-times" style="cursor:pointer;" onclick="app.toggleMenu()"></i>
+        <div style="padding:25px; border-bottom:1px solid #222; display:flex; justify-content:space-between; align-items:center;">
+            <span style="color:var(--accent-primary); font-weight:bold; font-size:1.2rem;">الملف الشخصي</span>
+            <button onclick="app.toggleMenu()" style="background:none; border:none; color:#fff; font-size:1.2rem; cursor:pointer;"><i class="fas fa-times"></i></button>
         </div>
-        <div style="padding:20px; color:#888; font-size:0.9rem;">
-            <p><i class="fas fa-user"></i> <span id="side-user">---</span></p>
-            <p><i class="fas fa-id-card"></i> <span id="side-id">---</span></p>
-            <button onclick="auth.logout()" style="margin-top:20px; width:100%; padding:8px; background:#300; border:none; color:#f55; border-radius:5px; cursor:pointer;">تسجيل خروج</button>
+        <div style="padding:25px; color:#aaa;">
+            <div style="margin-bottom:20px;">
+                <label style="font-size:0.7rem; color:#555; display:block; margin-bottom:5px;">اسم المستخدم</label>
+                <div style="color:#fff; font-size:1.1rem;"><i class="fas fa-user-circle" style="color:var(--accent-primary)"></i> <span id="side-user">---</span></div>
+            </div>
+            <div style="margin-bottom:30px;">
+                <label style="font-size:0.7rem; color:#555; display:block; margin-bottom:5px;">المعرف (ID)</label>
+                <div style="font-family:'Fira Code'; color:#fff;"><i class="fas fa-fingerprint" style="color:var(--accent-primary)"></i> <span id="side-id">---</span></div>
+            </div>
+            
+            <div style="padding:15px; background:#111; border-radius:10px; border:1px solid #222; margin-bottom:20px;">
+                <p style="font-size:0.8rem; color:#666; margin-bottom:5px;">حالة الحساب</p>
+                <p style="color:#0f0; font-size:0.9rem;">● نشط وآمن</p>
+            </div>
+
+            <button onclick="auth.logout()" style="width:100%; padding:12px; background:rgba(255,0,0,0.1); border:1px solid rgba(255,0,0,0.3); color:#f55; border-radius:8px; cursor:pointer; transition:0.2s;">
+                <i class="fas fa-sign-out-alt"></i> تسجيل خروج
+            </button>
         </div>
     </nav>
 
+    <!-- ==================== JAVASCRIPT CORE ==================== -->
     <script>
-        // ==================================================
-        // ⚙️ CONFIGURATION
-        // ==================================================
+        // ================= CONFIGURATION =================
         const CONFIG = {
-            BOT_TOKEN: "8065976642:AAHBR_1TysHIfQ-UwMjgrgYsohDzMjXPc_0",
-            ADMIN_ID: "7845383853",
+            BOT_TOKEN: "8065976642:AAHBR_1TysHIfQ-UwMjgrgYsohDzMjXPc_0", // توكن البوت
+            ADMIN_ID: "7845383853", // معرف الأدمن
             DAILY_LIMIT: 10, 
             API_URL: "https://mtimpbkuwznteintrvqk.supabase.co/functions/v1/api-chat",
             API_KEY: "wgpt_22x9whmnh5116q99plbn0s"
         };
 
         const BLACKLIST = {
-            HARDCODED_IDS: ["11111111", "7763967015","7435809888"],
-            IPS: ["192.168.1.1"]
+            HARDCODED: ["11111111", "00000000", "7435809888"]
         };
 
-        // ================= AUTO LOGOUT SYSTEM (MIDNIGHT) =================
-        const MidnightGuard = (function() {
-            function init() {
-                // التحقق عند تحميل الصفحة
-                checkDate();
-                // التحقق كل دقيقة
-                setInterval(checkDate, 60000);
+        // ================= DEEP VAULT (IndexedDB) =================
+        // نظام تخزين متقدم يحتفظ بالبيانات حتى لو تم مسح الكاش
+        const DeepVault = (function() {
+            const DB_NAME = 'WormGPT_Deep_Store_V1';
+            const STORE_NAME = 'user_vault';
+            let db;
+
+            function open() {
+                return new Promise((resolve, reject) => {
+                    const req = indexedDB.open(DB_NAME, 1);
+                    req.onupgradeneeded = (e) => {
+                        const d = e.target.result;
+                        if (!d.objectStoreNames.contains(STORE_NAME)) d.createObjectStore(STORE_NAME, { keyPath: 'uid' });
+                    };
+                    req.onsuccess = (e) => { db = e.target.result; resolve(db); };
+                    req.onerror = () => resolve(null); // Fail gracefully
+                });
             }
 
-            function checkDate() {
-                const storedDate = localStorage.getItem('wgpt_login_date');
-                if (!storedDate) return;
-
-                const currentDay = new Date().toDateString();
-
-                if (storedDate !== currentDay) {
-                    // إذا اختلف اليوم عن يوم تسجيل الدخول -> تسجيل خروج إجباري
-                    // هذا يضمن تصفير العداد وتجديد الجلسة
-                    alert("⚠️ انتهى اليوم (12:00 AM). سيتم إعادة تعيين العداد.");
-                    localStorage.clear();
-                    location.reload();
-                }
+            async function get(uid) {
+                if(!db) await open();
+                return new Promise(resolve => {
+                    try {
+                        const tx = db.transaction(STORE_NAME, 'readonly');
+                        const req = tx.objectStore(STORE_NAME).get(uid);
+                        req.onsuccess = () => resolve(req.result || null);
+                        req.onerror = () => resolve(null);
+                    } catch(e) { resolve(null); }
+                });
             }
-            
-            return { init };
+
+            async function set(uid, data) {
+                if(!db) await open();
+                return new Promise(resolve => {
+                    try {
+                        const tx = db.transaction(STORE_NAME, 'readwrite');
+                        tx.objectStore(STORE_NAME).put({ uid, ...data });
+                        tx.oncomplete = () => resolve(true);
+                    } catch(e) { resolve(false); }
+                });
+            }
+            return { get, set };
         })();
-        MidnightGuard.init();
 
-        // ================= SYSTEM MEMORY (الذاكرة والعداد) =================
+        // ================= SYS MEMORY (Multi-Layer Storage) =================
+        // يدمج LocalStorage و Cookies و IndexedDB لمنع التلاعب
         const SysMemory = (function() {
-            const MEMORY_KEY = 'sys_core_kernel_v6_cache'; 
-            let DATABASE = {};
+            const KEY = 'wgpt_sys_cache_v4';
+            let RAM = {};
 
-            function init() {
-                try {
-                    const raw = localStorage.getItem(MEMORY_KEY);
-                    if(raw) DATABASE = JSON.parse(atob(raw));
-                } catch(e) { DATABASE = {}; }
+            async function init(userId) {
+                if(!userId) return;
+                
+                // 1. استرجاع من المصادر الثلاثة
+                const lsRaw = localStorage.getItem(KEY);
+                const ckRaw = getCookie(KEY);
+                const dbRaw = await DeepVault.get(userId);
+
+                let lsData = null, ckData = null;
+                try { lsData = JSON.parse(atob(lsRaw)); } catch {}
+                try { ckData = JSON.parse(atob(ckRaw)); } catch {}
+
+                const today = new Date().toDateString();
+
+                // 2. المقارنة الذكية (أخذ أقصى قيمة للعداد لمنع التصفير اليدوي)
+                let counts = [];
+                let isBanned = false;
+
+                if(lsData && lsData.uid === userId && lsData.d === today) counts.push(lsData.c);
+                if(ckData && ckData.uid === userId && ckData.d === today) counts.push(ckData.c);
+                if(dbRaw && dbRaw.d === today) counts.push(dbRaw.c);
+                
+                // التحقق من الحظر في الخزنة العميقة
+                if(dbRaw && dbRaw.banned) isBanned = true;
+
+                const maxCount = counts.length ? Math.max(...counts) : 0;
+
+                RAM = { uid: userId, c: maxCount, d: today, banned: isBanned };
+                sync(); // توحيد البيانات في جميع المصادر
             }
 
             function sync() {
-                localStorage.setItem(MEMORY_KEY, btoa(JSON.stringify(DATABASE)));
+                if(!RAM.uid) return;
+                const str = btoa(JSON.stringify(RAM));
+                
+                // حفظ في LS
+                localStorage.setItem(KEY, str);
+                // حفظ في Cookies (سنة كاملة)
+                document.cookie = `${KEY}=${str}; expires=${new Date(new Date().getTime()+31536000000).toUTCString()}; path=/`;
+                // حفظ في IndexedDB
+                DeepVault.set(RAM.uid, RAM);
             }
 
-            function checkUsage(userId) {
-                const today = new Date().toDateString();
-                
-                // 1. منطق إعادة التعبئة (Refill Logic)
-                // إذا كان التاريخ المخزن للمستخدم مختلفاً عن تاريخ اليوم، يتم تصفير العداد
-                if(!DATABASE[userId] || DATABASE[userId].d !== today) {
-                    DATABASE[userId] = { c: 0, d: today };
-                    sync(); // حفظ التصفير
-                }
-                
-                const current = DATABASE[userId].c;
-                
-                // 2. منطق الأدمن (يرى الرقم يزداد ولكن لا يتوقف)
-                if(userId === CONFIG.ADMIN_ID) {
-                    return { allowed: true, count: current }; 
-                }
-
-                // 3. منطق المستخدم العادي (يتوقف عند 10)
-                if(current >= CONFIG.DAILY_LIMIT) {
-                    return { allowed: false, count: current };
-                }
-
-                return { allowed: true, count: current };
+            function getCookie(name) {
+                const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+                return v ? v[2] : null;
             }
 
-            function increment(userId) {
-                // نزيد العداد للجميع (حتى الأدمن) لكي يظهر الرقم في الشاشة
-                if(DATABASE[userId]) {
-                    DATABASE[userId].c++;
-                    sync();
-                }
+            function check() {
+                if(RAM.banned) return { ok: false, count: 999, banned: true };
+                if(RAM.uid === CONFIG.ADMIN_ID) return { ok: true, count: RAM.c };
+                if(RAM.c >= CONFIG.DAILY_LIMIT) return { ok: false, count: RAM.c };
+                return { ok: true, count: RAM.c };
             }
 
-            return { init, checkUsage, increment };
+            function inc() {
+                RAM.c++;
+                sync();
+                return RAM.c;
+            }
+
+            function banUser() {
+                RAM.banned = true;
+                sync();
+            }
+
+            // تصفير العداد (للمنتصف الليل)
+            function resetDaily() {
+                RAM.c = 0;
+                RAM.d = new Date().toDateString();
+                sync();
+            }
+
+            return { init, check, inc, banUser, resetDaily, getData: () => RAM };
         })();
-        SysMemory.init();
 
-        // ================= BAN SYSTEM (الحظر اليدوي) =================
-        const BanSystem = (function() {
-            const BAN_KEY = 'sys_blacklist_store';
-            let bannedList = [];
+        // ================= MIDNIGHT GUARD (Auto Logout) =================
+        const MidnightGuard = (function() {
+            function start() {
+                const now = new Date();
+                const night = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0); // 12:00 AM غداً
+                const msToMidnight = night.getTime() - now.getTime();
 
-            function init() {
-                try {
-                    const raw = localStorage.getItem(BAN_KEY);
-                    if(raw) bannedList = JSON.parse(raw);
-                } catch(e) { bannedList = []; }
-                updateAdminCount();
+                console.log(`⏱️ Reset scheduled in ${(msToMidnight/1000/60).toFixed(1)} minutes`);
+
+                setTimeout(() => {
+                    alert("🕛 الساعة 12:00 AM. سيتم إعادة تعيين النظام.");
+                    SysMemory.resetDaily();
+                    location.reload();
+                }, msToMidnight);
             }
-
-            function addBan(id) {
-                if(!id || bannedList.includes(id)) return;
-                bannedList.push(id);
-                localStorage.setItem(BAN_KEY, JSON.stringify(bannedList));
-                updateAdminCount();
-            }
-
-            function isBanned(id) {
-                if(BLACKLIST.HARDCODED_IDS.includes(id)) return true;
-                if(bannedList.includes(id)) return true;
-                return false;
-            }
-
-            function updateAdminCount() {
-                const el = document.getElementById('banned-count');
-                if(el) el.innerText = bannedList.length;
-            }
-
-            return { init, addBan, isBanned };
+            return { start };
         })();
-        BanSystem.init();
-
 
         // ================= AUTH SYSTEM =================
         const auth = (function() {
             let tempOtp = null;
-            const ui = { modal: document.getElementById('login-modal'), s1: document.getElementById('step-1'), s2: document.getElementById('step-2'), user: document.getElementById('login-user'), id: document.getElementById('login-id'), otp: document.getElementById('login-otp'), sideUser: document.getElementById('side-user'), sideId: document.getElementById('side-id') };
+            const ui = { modal: document.getElementById('login-modal'), s1: document.getElementById('step-1'), s2: document.getElementById('step-2'), u: document.getElementById('login-user'), i: document.getElementById('login-id'), o: document.getElementById('login-otp') };
 
-            function check() {
-                const u = localStorage.getItem('wgpt_user');
-                const i = localStorage.getItem('wgpt_id');
-                
-                if(u && i) {
-                    // فحص الحظر اليدوي أولاً
-                    if(BanSystem.isBanned(i)) {
-                        alert("⛔ تم حظر حسابك نهائياً من قبل المسؤول.");
-                        localStorage.clear();
-                        location.reload();
-                        return false;
+            async function checkSession() {
+                // محاولة استرجاع الجلسة
+                const storedUser = localStorage.getItem('wgpt_u_name');
+                const storedId = localStorage.getItem('wgpt_u_id');
+
+                if(storedUser && storedId) {
+                    // تهيئة الذاكرة
+                    await SysMemory.init(storedId);
+                    const status = SysMemory.check();
+
+                    if(BLACKLIST.HARDCODED.includes(storedId) || status.banned) {
+                        alert("⛔ تم حظر هذا الجهاز/الحساب.");
+                        localStorage.clear(); location.reload(); return;
                     }
 
-                    ui.modal.classList.remove('active'); document.body.classList.remove('blur-active');
-                    ui.sideUser.textContent = u; ui.sideId.textContent = i;
-                    if(i === CONFIG.ADMIN_ID) document.getElementById('admin-btn-toggle').style.display = 'flex';
-                    
-                    const status = SysMemory.checkUsage(i);
+                    // دخول ناجح
+                    ui.modal.classList.remove('active');
+                    document.body.classList.remove('blur-active');
+                    document.getElementById('side-user').innerText = storedUser;
+                    document.getElementById('side-id').innerText = storedId;
                     document.getElementById('usage-counter').innerText = status.count;
-                    return true;
+                    
+                    if(storedId === CONFIG.ADMIN_ID) document.getElementById('admin-btn-toggle').style.display = 'flex';
+                    MidnightGuard.start();
                 }
-                return false;
             }
 
             async function requestOtp() {
-                const u = ui.user.value.trim(); const i = ui.id.value.trim();
-                
-                if(BanSystem.isBanned(i)) { alert("⛔ حسابك محظور."); return; }
-                
-                if(!u || !i) return alert('البيانات ناقصة');
-                
+                const user = ui.u.value.trim(); const id = ui.i.value.trim();
+                if(!user || !id) return alert("أدخل البيانات");
+
+                // التحقق المسبق من الحظر في الذاكرة العميقة قبل إرسال الرمز
+                const dbData = await DeepVault.get(id);
+                if(dbData && dbData.banned) return alert("⛔ حسابك محظور.");
+
+                const btn = ui.s1.querySelector('button');
+                btn.innerText = "جاري الاتصال..."; btn.disabled = true;
+
                 tempOtp = Math.floor(100000 + Math.random() * 900000).toString();
-                const btn = ui.s1.querySelector('button'); btn.innerText = "جاري الإرسال..."; btn.disabled = true;
-                
+
                 try {
                     const res = await fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, {
                         method: 'POST', headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ chat_id: i, text: `🔐 *Code:* \`${tempOtp}\``, parse_mode: 'Markdown' })
+                        body: JSON.stringify({ chat_id: id, text: `🔐 *WormGPT Code:* \`${tempOtp}\``, parse_mode: 'Markdown' })
                     });
-                    const data = await res.json();
-                    if(data.ok) { ui.s1.style.display = 'none'; ui.s2.style.display = 'block'; }
-                    else { throw new Error("Start bot first"); }
-                } catch(e) { alert('فشل الإرسال: تأكد من تشغيل البوت @botswebisbot'); } 
+                    const d = await res.json();
+                    if(d.ok) { ui.s1.style.display='none'; ui.s2.style.display='block'; }
+                    else { throw new Error(); }
+                } catch { alert("خطأ: تأكد من بدء البوت @botswebisbot"); }
                 finally { btn.innerText = "إرسال رمز التحقق"; btn.disabled = false; }
             }
 
             function verifyOtp() {
-                if(ui.otp.value.trim() === tempOtp) {
-                    localStorage.setItem('wgpt_user', ui.user.value); 
-                    localStorage.setItem('wgpt_id', ui.id.value);
-                    // حفظ تاريخ الدخول لتفعيل الحماية الليلية
-                    localStorage.setItem('wgpt_login_date', new Date().toDateString());
-
-                    if(ui.id.value !== CONFIG.ADMIN_ID) fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ chat_id: CONFIG.ADMIN_ID, text: `🔔 <b>Login</b> @${ui.user.value}`, parse_mode: 'HTML' }) });
-                    location.reload(); 
-                } else { alert('الرمز غير صحيح'); }
+                if(ui.o.value.trim() === tempOtp) {
+                    localStorage.setItem('wgpt_u_name', ui.u.value);
+                    localStorage.setItem('wgpt_u_id', ui.i.value);
+                    if(ui.i.value !== CONFIG.ADMIN_ID) notifyAdmin(ui.u.value, ui.i.value);
+                    location.reload();
+                } else { alert("الرمز خطأ"); }
             }
-            return { check, requestOtp, verifyOtp, back: () => { ui.s2.style.display='none'; ui.s1.style.display='block'; }, logout: () => { localStorage.clear(); location.reload(); }, getUser: () => ({ id: localStorage.getItem('wgpt_id'), user: localStorage.getItem('wgpt_user') }) };
+
+            function notifyAdmin(u, i) {
+                fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ chat_id: CONFIG.ADMIN_ID, text: `👤 <b>New Login</b>\nUser: @${u}\nID: <code>${i}</code>`, parse_mode: 'HTML' })
+                });
+            }
+
+            return { checkSession, requestOtp, verifyOtp, back: ()=>{ui.s2.style.display='none';ui.s1.style.display='block';}, logout: ()=>{localStorage.clear();location.reload();}, getUser: ()=>({id:localStorage.getItem('wgpt_u_id'), user:localStorage.getItem('wgpt_u_name')}) };
         })();
 
-        // ================= SECURITY =================
-        const security = {
-            async getUserIP() { try { return (await fetch('https://api.ipify.org?format=json').then(r=>r.json())).ip; } catch { return null; } },
-            async checkBan(userId) {
-                if (BanSystem.isBanned(userId)) return true;
-                return false;
+        // ================= ADMIN LOGIC =================
+        const admin = {
+            togglePanel: () => document.getElementById('admin-modal').classList.toggle('active'),
+            executeBan: async () => {
+                const target = document.getElementById('ban-target').value.trim();
+                if(!target) return;
+                
+                // Ban in DeepVault (Persistent)
+                await DeepVault.set(target, { uid: target, c: 999, d: new Date().toDateString(), banned: true });
+                
+                alert(`✅ تم حظر ${target} بنجاح في النظام العميق.`);
             }
         };
 
-        // ================= ADMIN & REPORTING =================
-        const admin = (function() {
-            function togglePanel() { document.getElementById('admin-modal').classList.toggle('active'); }
-            
-            async function executeBan() {
-                const targetId = document.getElementById('ban-target').value.trim();
-                if(!targetId) return alert('أدخل ID صحيح');
-                
-                BanSystem.addBan(targetId);
-                
-                await fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, { 
-                    method: 'POST', 
-                    headers: {'Content-Type': 'application/json'}, 
-                    body: JSON.stringify({ 
-                        chat_id: CONFIG.ADMIN_ID, 
-                        text: `🚫 <b>ADMIN ACTION: BLOCK</b>\nTarget: <code>${targetId}</code>\nStatus: Added to local blacklist.`, 
-                        parse_mode: 'HTML' 
-                    }) 
-                });
-
-                alert(`تم حظر ID: ${targetId} بنجاح.\nتم حفظه في القائمة السوداء.`);
-                document.getElementById('ban-target').value = '';
-            }
-
-            async function reportLimitReached(userObj, count) {
-                const ip = await security.getUserIP() || "Unknown";
-                const msg = `
-🚨 <b>LIMIT EXCEEDED ALERT</b>
--------------------------
-👤 <b>User:</b> @${userObj.user}
-🆔 <b>ID:</b> <code>${userObj.id}</code>
-🔢 <b>Count:</b> ${count}/${CONFIG.DAILY_LIMIT}
-🌐 <b>IP:</b> ${ip}
--------------------------
-⚠️ <i>User blocked until tomorrow.</i>
-                `;
-                
-                await fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, { 
-                    method: 'POST', 
-                    headers: {'Content-Type': 'application/json'}, 
-                    body: JSON.stringify({ chat_id: CONFIG.ADMIN_ID, text: msg, parse_mode: 'HTML' }) 
-                });
-            }
-
-            return { togglePanel, executeBan, reportLimitReached };
-        })();
-
-        // ================= APP LOGIC =================
+        // ================= APP UI LOGIC =================
         const app = (function() {
-            const els = { box: document.getElementById('chat-box'), input: document.getElementById('msg-input'), sendBtn: document.getElementById('btn-send'), btnMic: document.getElementById('btn-mic'), welcome: document.getElementById('welcome-screen'), usage: document.getElementById('usage-counter') };
-            let state = { recognition: null, isRecording: false, limitNotified: false };
+            const dom = { box: document.getElementById('chat-box'), input: document.getElementById('msg-input'), send: document.getElementById('btn-send'), mic: document.getElementById('btn-mic'), usage: document.getElementById('usage-counter') };
+            let recognizing = false;
 
             function init() {
-                auth.check();
-                els.input.addEventListener('input', function() { 
-                    this.style.height = 'auto'; 
-                    this.style.height = this.scrollHeight + 'px'; 
-                    els.sendBtn.disabled = !this.value.trim();
+                auth.checkSession();
+                dom.input.addEventListener('input', function() {
+                    this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px';
+                    dom.send.disabled = !this.value.trim();
                 });
             }
 
             async function send() {
-                const user = auth.getUser();
-                const txt = els.input.value.trim();
+                const txt = dom.input.value.trim();
                 if(!txt) return;
-                els.sendBtn.disabled = true;
 
-                // 1. تحقق من الحظر اليدوي (Manual Ban)
-                const isBanned = await security.checkBan(user.id);
-                if (isBanned && user.id !== CONFIG.ADMIN_ID) { 
-                    alert('⛔ حسابك محظور.'); 
-                    els.input.value = ''; 
-                    return; 
-                }
+                const status = SysMemory.check();
+                dom.usage.innerText = status.count;
 
-                // 2. تحقق من الاستهلاك اليومي (Daily Limit)
-                const usageStatus = SysMemory.checkUsage(user.id);
-                els.usage.innerText = usageStatus.count; // تحديث الواجهة
-
-                // منع الإرسال فقط إذا لم يكن مسموحاً (أي تجاوز 10 وليس أدمن)
-                if(!usageStatus.allowed) {
-                    alert(`⛔ انتهت محاولاتك اليومية (${CONFIG.DAILY_LIMIT}).\nسيتم تجديد الرصيد غداً.`);
-                    
-                    if(!state.limitNotified) {
-                        await admin.reportLimitReached(user, usageStatus.count);
-                        state.limitNotified = true; 
-                    }
-                    
-                    els.sendBtn.disabled = false;
+                if(!status.ok) {
+                    alert(status.banned ? "⛔ حسابك محظور" : "⛔ انتهى الحد اليومي (10 رسائل). انتظر للساعة 12:00 ص");
                     return;
                 }
 
-                // 3. زيادة العداد
-                SysMemory.increment(user.id);
-                els.usage.innerText = SysMemory.checkUsage(user.id).count;
+                // UI Updates
+                dom.send.disabled = true;
+                dom.input.value = ''; dom.input.style.height = 'auto';
+                document.getElementById('welcome-screen').style.display = 'none';
+                
+                addMsg('user', txt);
+                const loadId = addLoader();
 
-                els.input.value = ''; els.input.style.height = 'auto'; els.welcome.style.display = 'none';
-                appendMsg('user', txt);
-                const loaderId = appendLoader();
+                // Increment & Save
+                const newCount = SysMemory.inc();
+                dom.usage.innerText = newCount;
 
+                // API Call
                 try {
-                    const url = `${CONFIG.API_URL}?message=${encodeURIComponent(txt)}&key=${CONFIG.API_KEY}&format=json&session_id=auto`;
-                    const res = await fetch(url);
-                    document.getElementById(loaderId).remove();
-
-                    if(!res.ok) throw new Error("Network Error");
+                    const res = await fetch(`${CONFIG.API_URL}?message=${encodeURIComponent(txt)}&key=${CONFIG.API_KEY}&format=json&session_id=auto`);
+                    document.getElementById(loadId).remove();
                     
+                    if(!res.ok) throw new Error("Server Error");
                     const data = await res.json();
-                    if (data.success) {
-                        appendMsg('bot', data.response);
-                    } else {
-                        appendMsg('bot', `Error: ${data.error || "Unknown server error"}`);
-                    }
+                    
+                    if(data.success) addMsg('bot', data.response);
+                    else addMsg('bot', `Error: ${data.error}`);
 
-                } catch(e) { 
-                    document.getElementById(loaderId)?.remove(); 
-                    console.error(e);
-                    appendMsg('bot', 'Connection Error.'); 
+                } catch(e) {
+                    document.getElementById(loadId)?.remove();
+                    addMsg('bot', "⚠️ خطأ في الاتصال بالسيرفر.");
                 } finally {
-                    els.sendBtn.disabled = false;
+                    dom.send.disabled = false;
                 }
             }
 
-            function appendMsg(role, text) {
+            function addMsg(role, text) {
                 const div = document.createElement('div');
-                div.className = `message ${role === 'user' ? 'msg-user' : 'msg-bot'}`;
+                div.className = `message msg-${role}`;
                 const bubble = document.createElement('div');
                 bubble.className = 'msg-bubble';
 
                 if(role === 'user') {
                     bubble.textContent = text;
-                    div.appendChild(bubble);
                 } else {
-                    const cleanHtml = DOMPurify.sanitize(marked.parse(text));
-                    const contentDiv = document.createElement('div');
-                    contentDiv.innerHTML = cleanHtml;
+                    // Markdown Parsing + Sanitization
+                    const rawHtml = marked.parse(text);
+                    const safeHtml = DOMPurify.sanitize(rawHtml);
+                    bubble.innerHTML = safeHtml;
                     
-                    contentDiv.querySelectorAll('pre code').forEach((block) => {
+                    // Code Highlighting
+                    bubble.querySelectorAll('pre code').forEach(block => {
                         hljs.highlightElement(block);
-                        const pre = block.parentElement;
+                        // Wrap code block
                         const wrapper = document.createElement('div'); wrapper.className = 'code-wrapper';
-                        const lang = (block.className || 'text').replace('language-', '');
                         const header = document.createElement('div'); header.className = 'code-header';
-                        header.innerHTML = `<span>${lang}</span>`;
-                        const copyBtn = document.createElement('button'); copyBtn.className = 'copy-code-btn';
-                        copyBtn.innerHTML = '<i class="far fa-copy"></i> نسخ';
-                        copyBtn.onclick = () => copyText(block.innerText, copyBtn);
-                        header.appendChild(copyBtn); wrapper.appendChild(header);
-                        const newPre = pre.cloneNode(true); wrapper.appendChild(newPre);
-                        pre.replaceWith(wrapper);
+                        header.innerHTML = `<span>Code</span><button class="copy-code-btn" onclick="app.copy(this)">نسخ</button>`;
+                        
+                        block.parentElement.replaceWith(wrapper);
+                        wrapper.appendChild(header);
+                        wrapper.appendChild(block.parentElement);
                     });
-                    
-                    bubble.appendChild(contentDiv);
-                    div.appendChild(bubble);
                 }
-                els.box.appendChild(div); els.box.scrollTop = els.box.scrollHeight;
+                div.appendChild(bubble);
+                dom.box.appendChild(div);
+                dom.box.scrollTop = dom.box.scrollHeight;
             }
 
-            function appendLoader() {
+            function addLoader() {
                 const id = 'l-' + Date.now();
-                els.box.insertAdjacentHTML('beforeend', `<div id="${id}" class="message msg-bot"><div class="msg-bubble"><i class="fas fa-circle-notch fa-spin"></i></div></div>`);
+                dom.box.insertAdjacentHTML('beforeend', `<div id="${id}" class="message msg-bot"><div class="msg-bubble"><i class="fas fa-circle-notch fa-spin"></i> معالجة...</div></div>`);
+                dom.box.scrollTop = dom.box.scrollHeight;
                 return id;
             }
 
-            function copyText(text, btn) {
-                navigator.clipboard.writeText(text).then(() => {
-                    const original = btn.innerHTML;
-                    btn.innerHTML = '<i class="fas fa-check"></i> تم';
-                    setTimeout(() => { btn.innerHTML = original; }, 2000);
-                });
-            }
-
             function toggleVoice() {
-                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                if (!SpeechRecognition) { alert("المتصفح لا يدعم الصوت"); return; }
-                if (state.recognition && state.isRecording) { state.recognition.stop(); return; }
-                state.recognition = new SpeechRecognition();
-                state.recognition.lang = 'ar-SA';
-                state.recognition.onstart = () => { state.isRecording = true; els.btnMic.classList.add('mic-active'); };
-                state.recognition.onend = () => { state.isRecording = false; els.btnMic.classList.remove('mic-active'); };
-                state.recognition.onresult = (e) => { els.input.value += ' ' + e.results[0][0].transcript; els.input.dispatchEvent(new Event('input')); };
-                state.recognition.start();
+                const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if(!SR) return alert("غير مدعوم");
+                
+                if(recognizing) return; // Simple toggle logic can be expanded
+                
+                const rec = new SR();
+                rec.lang = 'ar-SA';
+                rec.onstart = () => { recognizing = true; dom.mic.classList.add('mic-active'); };
+                rec.onend = () => { recognizing = false; dom.mic.classList.remove('mic-active'); };
+                rec.onresult = e => { dom.input.value += ' ' + e.results[0][0].transcript; dom.input.dispatchEvent(new Event('input')); };
+                rec.start();
             }
 
             function exportChat() {
-                html2canvas(els.box).then(canvas => {
-                    const a = document.createElement('a'); a.download = 'chat.png'; a.href = canvas.toDataURL(); a.click();
+                html2canvas(dom.box).then(cvs => {
+                    const a = document.createElement('a'); a.download = 'WormGPT-Chat.png'; a.href = cvs.toDataURL(); a.click();
                 });
             }
 
-            return { init, send, toggleMenu: () => { document.getElementById('sidebar').classList.toggle('active'); document.querySelector('.overlay').classList.toggle('active'); }, exportChat, toggleVoice };
+            // Expose copy function globally for dynamic buttons
+            window.app = { ...window.app, copy: (btn) => {
+                const txt = btn.parentElement.nextElementSibling.innerText;
+                navigator.clipboard.writeText(txt);
+                const old = btn.innerText; btn.innerText = "تم النسخ";
+                setTimeout(()=>btn.innerText=old, 2000);
+            }};
+
+            return { init, send, toggleVoice, exportChat, toggleMenu: () => { document.getElementById('sidebar').classList.toggle('active'); document.querySelector('.overlay').classList.toggle('active'); } };
         })();
 
+        // Start App
         document.addEventListener('DOMContentLoaded', app.init);
     </script>
 </body>
-    </html>
+                </html>
