@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" id="html-root">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -63,6 +63,13 @@
         .header-btn:active { transform: scale(0.95); }
         
         #admin-btn-toggle { display: none; border-color: var(--admin-color); color: var(--admin-color); box-shadow: 0 0 10px rgba(0, 255, 136, 0.2); }
+        
+        #language-selector { 
+            position: relative; background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); color: #ccc; border-radius: 10px; 
+            padding: 8px 12px; cursor: pointer; font-size: 0.9rem; transition: 0.2s;
+        }
+        #language-selector:hover { background: rgba(255,255,255,0.08); }
 
         #chat-box { flex: 1; overflow-y: auto; padding: 15px; scroll-behavior: smooth; }
         
@@ -166,23 +173,23 @@
             
             <div id="step-1">
                 <div class="input-group">
-                    <label>اسم المستخدم</label>
-                    <input type="text" id="login-user" placeholder="أدخل اسمك">
+                    <label data-i18n="username">Username</label>
+                    <input type="text" id="login-user" data-i18n="enterName" placeholder="Enter your name">
                 </div>
                 <div class="input-group">
                     <label>Telegram ID</label>
-                    <input type="text" id="login-id" placeholder="معرف التليجرام الخاص بك">
+                    <input type="text" id="login-id" data-i18n="enterTelegramId" placeholder="Enter Telegram ID">
                 </div>
-                <button onclick="auth.requestOtp()" class="btn-primary">إرسال رمز التحقق</button>
+                <button onclick="auth.requestOtp()" class="btn-primary" data-i18n="getOtp">Get OTP Code</button>
             </div>
 
             <div id="step-2" style="display:none;">
                 <div class="input-group">
-                    <label>رمز التحقق</label>
-                    <input type="text" id="login-otp" placeholder="أدخل الرمز المرسل">
+                    <label data-i18n="enterOtp">Enter OTP Code</label>
+                    <input type="text" id="login-otp" data-i18n="enterOtp" placeholder="Enter OTP Code">
                 </div>
-                <button onclick="auth.verifyOtp()" class="btn-primary">تسجيل الدخول</button>
-                <button onclick="document.getElementById('step-1').style.display='block'; document.getElementById('step-2').style.display='none';" style="background:transparent; border:1px solid #333; margin-top:10px;" class="btn-primary">رجوع</button>
+                <button onclick="auth.verifyOtp()" class="btn-primary" data-i18n="login">Login</button>
+                <button onclick="document.getElementById('step-1').style.display='block'; document.getElementById('step-2').style.display='none';" style="background:transparent; border:1px solid #333; margin-top:10px;" class="btn-primary" data-i18n="back">Back</button>
             </div>
             
             <div style="margin-top:20px; display:flex; justify-content:space-between; font-size:0.75rem; color:#555;">
@@ -209,7 +216,15 @@
                 <button id="admin-btn-toggle" onclick="admin.togglePanel()" class="header-btn"><i class="fas fa-user-shield"></i></button>
             </div>
             <div id="title">WORM<span style="color:#fff">GPT</span></div>
-            <button onclick="app.toggleMenu()" class="header-btn"><i class="fas fa-bars"></i></button>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <select id="language-selector" onchange="i18n.changeLang(this.value)">
+                    <option value="ar">🇸🇦 ع</option>
+                    <option value="en">🇬🇧 En</option>
+                    <option value="fr">🇫🇷 Fr</option>
+                    <option value="es">🇪🇸 Es</option>
+                </select>
+                <button onclick="app.toggleMenu()" class="header-btn"><i class="fas fa-bars"></i></button>
+            </div>
         </header>
 
         <div id="chat-box">
@@ -217,10 +232,10 @@
                 <div style="width:80px; height:80px; background:var(--accent-primary); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; box-shadow:0 0 30px var(--accent-glow);">
                     <i class="fas fa-biohazard" style="font-size:2.5rem; color:#fff;"></i>
                 </div>
-                <h3 style="font-family:'Orbitron'; margin-bottom:10px;">WormGPT V4 Cloud DB</h3>
-                <p style="font-size:0.9rem;">Secure & Database-Connected</p>
-                <div style="margin-top:20px; font-size:0.8rem; background:#111; display:inline-block; padding:5px 15px; border-radius:20px; border:1px solid #333;">
-                    Limit: 10 Messages / Day
+                <h3 style="font-family:'Orbitron'; margin-bottom:10px;" data-i18n="welcomeTitle">WormGPT V4 Cloud DB</h3>
+                <p style="font-size:0.9rem;" data-i18n="welcomeSubtitle">Secure & Database-Connected</p>
+                <div id="limit-badge" style="margin-top:20px; font-size:0.8rem; background:#111; display:inline-block; padding:5px 15px; border-radius:20px; border:1px solid #333;">
+                    <span data-i18n="limitFree">Limit: 10 Messages / Day</span>
                 </div>
             </div>
         </div>
@@ -229,13 +244,13 @@
             <form class="input-box" onsubmit="event.preventDefault(); app.send();">
                 <button type="button" onclick="app.exportChat()" class="action-btn"><i class="fas fa-camera"></i></button>
                 <button type="button" id="btn-mic" onclick="app.toggleVoice()" class="action-btn"><i class="fas fa-microphone"></i></button>
-                <textarea id="msg-input" placeholder="أدخل رسالتك هنا..." rows="1"></textarea>
+                <textarea id="msg-input" data-i18n="typeMessage" placeholder="Type your message..." rows="1"></textarea>
                 <button type="submit" id="btn-send" class="action-btn send-btn" disabled><i class="fas fa-paper-plane"></i></button>
             </form>
             <div style="text-align:center; font-size:0.7rem; color:#555; margin-top:8px;">
-                العداد اليومي: <span id="usage-counter" style="color:var(--text-main); font-weight:bold;">0</span> / 10
+                <span data-i18n="dailyCounter">Daily Counter</span>: <span id="usage-counter" style="color:var(--text-main); font-weight:bold;">0</span> / <span id="usage-limit">10</span>
                 <span style="margin:0 5px;">|</span>
-                إعادة التعيين: 12:00 AM
+                <span id="account-type" style="color:#888;">Free</span>
                 <span style="margin:0 5px;">|</span>
                 <span style="color:var(--admin-color);">DB Connected ✓</span>
             </div>
@@ -251,32 +266,213 @@
         </div>
         <div style="padding:25px; color:#aaa;">
             <div style="margin-bottom:20px;">
-                <label style="font-size:0.7rem; color:#555; display:block; margin-bottom:5px;">اسم المستخدم</label>
+                <label style="font-size:0.7rem; color:#555; display:block; margin-bottom:5px;" data-i18n="username">Username</label>
                 <div style="color:#fff; font-size:1.1rem;"><i class="fas fa-user-circle" style="color:var(--accent-primary)"></i> <span id="side-user">---</span></div>
             </div>
             <div style="margin-bottom:30px;">
-                <label style="font-size:0.7rem; color:#555; display:block; margin-bottom:5px;">المعرف (ID)</label>
+                <label style="font-size:0.7rem; color:#555; display:block; margin-bottom:5px;" data-i18n="userId">User ID</label>
                 <div style="font-family:'Fira Code'; color:#fff;"><i class="fas fa-fingerprint" style="color:var(--accent-primary)"></i> <span id="side-id">---</span></div>
             </div>
             
             <div style="padding:15px; background:#111; border-radius:10px; border:1px solid #222; margin-bottom:20px;">
-                <p style="font-size:0.8rem; color:#666; margin-bottom:5px;">حالة الحساب</p>
-                <p style="color:#0f0; font-size:0.9rem;">● نشط وآمن</p>
+                <p style="font-size:0.8rem; color:#666; margin-bottom:5px;" data-i18n="accountStatus">Account Status</p>
+                <p style="color:#0f0; font-size:0.9rem;" data-i18n="activeSecure">● Active & Secure</p>
             </div>
 
             <button onclick="auth.logout()" style="width:100%; padding:12px; background:rgba(255,0,0,0.1); border:1px solid rgba(255,0,0,0.3); color:#f55; border-radius:8px; cursor:pointer; transition:0.2s;">
-                <i class="fas fa-sign-out-alt"></i> تسجيل خروج
+                <i class="fas fa-sign-out-alt"></i> <span data-i18n="logout">Logout</span>
             </button>
         </div>
     </nav>
 
     <!-- ==================== JAVASCRIPT CORE ==================== -->
     <script>
+        // ================= TRANSLATIONS =================
+        const TRANSLATIONS = {
+            ar: {
+                title: "WormGPT Elite 🛡️",
+                username: "اسم المستخدم",
+                userId: "المعرف (ID)",
+                accountStatus: "حالة الحساب",
+                activeSecure: "● نشط وآمن",
+                logout: "تسجيل خروج",
+                pro: "⭐ Pro",
+                free: "Free",
+                admin: "👑 Admin",
+                limitUnlimited: "الحد: غير محدود ∞",
+                limitFree: "الحد: 10 رسائل / يوم",
+                dailyLimitReached: "⛔ انتهى الحد اليومي. ترقى إلى Pro للحصول على رسائل غير محدودة!",
+                accountBanned: "⛔ حسابك محظور",
+                enterName: "أدخل اسمك",
+                enterTelegramId: "أدخل معرف تيليجرام",
+                getOtp: "احصل على كود OTP",
+                enterOtp: "أدخل كود OTP المُرسل",
+                login: "تسجيل دخول",
+                loginTitle: "🔐 مطلوب تسجيل الدخول",
+                typeMessage: "اكتب رسالتك...",
+                send: "إرسال",
+                copy: "نسخ",
+                language: "اللغة",
+                dailyCounter: "العداد اليومي",
+                welcomeTitle: "WormGPT V4 Cloud DB",
+                welcomeSubtitle: "آمن ومتصل بقاعدة البيانات",
+                back: "رجوع"
+            },
+            en: {
+                title: "WormGPT Elite 🛡️",
+                username: "Username",
+                userId: "User ID",
+                accountStatus: "Account Status",
+                activeSecure: "● Active & Secure",
+                logout: "Logout",
+                pro: "⭐ Pro",
+                free: "Free",
+                admin: "👑 Admin",
+                limitUnlimited: "Limit: Unlimited ∞",
+                limitFree: "Limit: 10 Messages / Day",
+                dailyLimitReached: "⛔ Daily limit reached. Upgrade to Pro for unlimited messages!",
+                accountBanned: "⛔ Your account is banned",
+                enterName: "Enter your name",
+                enterTelegramId: "Enter Telegram ID",
+                getOtp: "Get OTP Code",
+                enterOtp: "Enter OTP Code",
+                login: "Login",
+                loginTitle: "🔐 Login Required",
+                typeMessage: "Type your message...",
+                send: "Send",
+                copy: "Copy",
+                language: "Language",
+                dailyCounter: "Daily Counter",
+                welcomeTitle: "WormGPT V4 Cloud DB",
+                welcomeSubtitle: "Secure & Database-Connected",
+                back: "Back"
+            },
+            fr: {
+                title: "WormGPT Elite 🛡️",
+                username: "Nom d'utilisateur",
+                userId: "ID utilisateur",
+                accountStatus: "État du compte",
+                activeSecure: "● Actif et sécurisé",
+                logout: "Se déconnecter",
+                pro: "⭐ Pro",
+                free: "Gratuit",
+                admin: "👑 Admin",
+                limitUnlimited: "Limite: Illimité ∞",
+                limitFree: "Limite: 10 messages / jour",
+                dailyLimitReached: "⛔ Limite quotidienne atteinte. Passez à Pro pour des messages illimités!",
+                accountBanned: "⛔ Votre compte est banni",
+                enterName: "Entrez votre nom",
+                enterTelegramId: "Entrez l'ID Telegram",
+                getOtp: "Obtenir le code OTP",
+                enterOtp: "Entrez le code OTP",
+                login: "Connexion",
+                loginTitle: "🔐 Connexion requise",
+                typeMessage: "Tapez votre message...",
+                send: "Envoyer",
+                copy: "Copier",
+                language: "Langue",
+                dailyCounter: "Compteur quotidien",
+                welcomeTitle: "WormGPT V4 Cloud DB",
+                welcomeSubtitle: "Sécurisé et connecté à la base de données",
+                back: "Retour"
+            },
+            es: {
+                title: "WormGPT Elite 🛡️",
+                username: "Nombre de usuario",
+                userId: "ID de usuario",
+                accountStatus: "Estado de cuenta",
+                activeSecure: "● Activo y seguro",
+                logout: "Cerrar sesión",
+                pro: "⭐ Pro",
+                free: "Gratis",
+                admin: "👑 Admin",
+                limitUnlimited: "Límite: Ilimitado ∞",
+                limitFree: "Límite: 10 mensajes / día",
+                dailyLimitReached: "⛔ Límite diario alcanzado. ¡Actualiza a Pro para mensajes ilimitados!",
+                accountBanned: "⛔ Tu cuenta está baneada",
+                enterName: "Ingresa tu nombre",
+                enterTelegramId: "Ingresa ID de Telegram",
+                getOtp: "Obtener código OTP",
+                enterOtp: "Ingresa el código OTP",
+                login: "Iniciar sesión",
+                loginTitle: "🔐 Inicio de sesión requerido",
+                typeMessage: "Escribe tu mensaje...",
+                send: "Enviar",
+                copy: "Copiar",
+                language: "Idioma",
+                dailyCounter: "Contador diario",
+                welcomeTitle: "WormGPT V4 Cloud DB",
+                welcomeSubtitle: "Seguro y conectado a base de datos",
+                back: "Volver"
+            }
+        };
+
+        // ================= i18n SYSTEM =================
+        const i18n = (function() {
+            let currentLang = 'ar';
+            
+            function detectBrowserLang() {
+                const browserLang = navigator.language || navigator.userLanguage;
+                const langCode = browserLang.split('-')[0].toLowerCase();
+                
+                // Supported languages: ar, en, fr, es
+                if (['ar', 'en', 'fr', 'es'].includes(langCode)) {
+                    return langCode;
+                }
+                return 'en'; // Default to English if not supported
+            }
+            
+            function init() {
+                const savedLang = localStorage.getItem('wormgpt_lang');
+                currentLang = savedLang || detectBrowserLang();
+                
+                document.getElementById('language-selector').value = currentLang;
+                updateUI();
+            }
+            
+            function changeLang(lang) {
+                currentLang = lang;
+                localStorage.setItem('wormgpt_lang', lang);
+                updateUI();
+            }
+            
+            function updateUI() {
+                const t = TRANSLATIONS[currentLang];
+                const htmlRoot = document.getElementById('html-root');
+                
+                // Update HTML attributes
+                htmlRoot.setAttribute('lang', currentLang);
+                htmlRoot.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
+                
+                // Update all text elements with data-i18n attribute
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    const key = el.getAttribute('data-i18n');
+                    if (t[key]) {
+                        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                            el.placeholder = t[key];
+                        } else {
+                            el.innerHTML = t[key];
+                        }
+                    }
+                });
+                
+                // Update title
+                document.getElementById('title').textContent = t.title;
+            }
+            
+            function t(key) {
+                return TRANSLATIONS[currentLang][key] || key;
+            }
+            
+            return { init, changeLang, t, get currentLang() { return currentLang; } };
+        })();
+
         // ================= CONFIGURATION =================
         const CONFIG = {
             BOT_TOKEN: "8065976642:AAHBR_1TysHIfQ-UwMjgrgYsohDzMjXPc_0",
             ADMIN_ID: "7845383853",
-            DAILY_LIMIT: 10, 
+            DAILY_LIMIT_FREE: 10,
+            DAILY_LIMIT_PRO: Infinity, // Pro users have unlimited messages
             API_URL: "https://mtimpbkuwznteintrvqk.supabase.co/functions/v1/api-chat",
             API_KEY: "wgpt_22x9whmnh5116q99plbn0s",
             // Supabase Config
@@ -285,7 +481,7 @@
         };
 
         const BLACKLIST = {
-            HARDCODED: ["11111111", "00000000", "00000000"]
+            HARDCODED: ["11111111", "00000000", "7530861312"]
         };
 
         // Initialize Supabase Client
@@ -404,27 +600,62 @@
 
         // ================= SYSTEM MEMORY (Cloud-Based) =================
         const SysMemory = (function() {
-            let RAM = { c: 0, d: '', banned: false, uid: '' };
+            let RAM = { c: 0, d: '', banned: false, uid: '', isPro: false, proExpiresAt: null, isAdmin: false };
 
             async function init(telegramId) {
                 const username = localStorage.getItem('wgpt_u_name') || 'User';
                 const userData = await DB.syncUser(telegramId, username);
                 
                 if (userData) {
+                    // Check if Pro expired
+                    let isPro = userData.is_pro;
+                    if (isPro && userData.pro_expires_at) {
+                        const now = new Date();
+                        const expires = new Date(userData.pro_expires_at);
+                        if (now > expires) {
+                            isPro = false;
+                            // Deactivate pro in DB
+                            await supabase
+                                .from('wormgpt_users')
+                                .update({ is_pro: false, pro_expires_at: null })
+                                .eq('telegram_id', telegramId);
+                        }
+                    }
+
                     RAM = {
                         c: userData.daily_count,
                         d: userData.last_reset_date,
                         banned: userData.is_banned,
-                        uid: telegramId
+                        uid: telegramId,
+                        isPro: isPro,
+                        proExpiresAt: userData.pro_expires_at,
+                        isAdmin: userData.is_admin || false
                     };
                 }
             }
 
             function check() {
                 if (RAM.banned) return { ok: false, count: 999, banned: true };
-                if (RAM.uid === CONFIG.ADMIN_ID) return { ok: true, count: RAM.c };
-                if (RAM.c >= CONFIG.DAILY_LIMIT) return { ok: false, count: RAM.c };
-                return { ok: true, count: RAM.c };
+                
+                // Pro users have unlimited messages
+                const limit = RAM.isPro ? Infinity : CONFIG.DAILY_LIMIT_FREE;
+                
+                // Admin always has access
+                if (RAM.isAdmin || RAM.uid === CONFIG.ADMIN_ID) {
+                    return { ok: true, count: RAM.c, isPro: RAM.isPro, limit: limit };
+                }
+                
+                // Pro users have no limit
+                if (RAM.isPro) {
+                    return { ok: true, count: RAM.c, isPro: RAM.isPro, limit: limit };
+                }
+                
+                // Free users check limit
+                if (RAM.c >= limit) {
+                    return { ok: false, count: RAM.c, isPro: RAM.isPro, limit: limit };
+                }
+                
+                return { ok: true, count: RAM.c, isPro: RAM.isPro, limit: limit };
             }
 
             async function inc() {
@@ -474,8 +705,21 @@
                     document.getElementById('side-user').innerText = storedUser;
                     document.getElementById('side-id').innerText = storedId;
                     document.getElementById('usage-counter').innerText = status.count;
+                    document.getElementById('usage-limit').innerText = status.isPro ? '∞' : status.limit;
                     
-                    if(storedId === CONFIG.ADMIN_ID) {
+                    // Update account type display
+                    const accountTypeEl = document.getElementById('account-type');
+                    const limitBadgeEl = document.getElementById('limit-badge');
+                    if (status.isPro) {
+                        accountTypeEl.innerHTML = `<span style="color:gold;">${i18n.t('pro')}</span>`;
+                        if (limitBadgeEl) limitBadgeEl.innerHTML = i18n.t('limitUnlimited');
+                    } else {
+                        accountTypeEl.innerHTML = `<span style="color:#888;">${i18n.t('free')}</span>`;
+                        if (limitBadgeEl) limitBadgeEl.innerHTML = i18n.t('limitFree');
+                    }
+                    
+                    const ram = SysMemory.getData();
+                    if(ram.isAdmin || storedId === CONFIG.ADMIN_ID) {
                         document.getElementById('admin-btn-toggle').style.display = 'flex';
                     }
                 }
@@ -602,7 +846,7 @@
                 dom.usage.innerText = status.count;
 
                 if(!status.ok) {
-                    alert(status.banned ? "⛔ حسابك محظور" : "⛔ انتهى الحد اليومي (10 رسائل). انتظر للساعة 12:00 ص");
+                    alert(status.banned ? i18n.t('accountBanned') : i18n.t('dailyLimitReached'));
                     return;
                 }
 
@@ -665,7 +909,7 @@
                         wrapper.className = 'code-wrapper';
                         const header = document.createElement('div'); 
                         header.className = 'code-header';
-                        header.innerHTML = `<span>Code</span><button class="copy-code-btn" onclick="app.copy(this)">نسخ</button>`;
+                        header.innerHTML = `<span>Code</span><button class="copy-code-btn" onclick="app.copy(this)">${i18n.t('copy')}</button>`;
                         
                         block.parentElement.replaceWith(wrapper);
                         wrapper.appendChild(header);
@@ -725,7 +969,10 @@
         })();
 
         // Start App
-        document.addEventListener('DOMContentLoaded', app.init);
+        document.addEventListener('DOMContentLoaded', () => {
+            i18n.init();
+            app.init();
+        });
     </script>
 </body>
-    </html>
+            </html>
