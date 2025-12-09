@@ -1,240 +1,1237 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" id="html-root">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إشعار هام - إيقاف التطبيقات</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>WormGPT Elite 🛡️ - Connected to Database</title>
+
+    <!-- الخطوط والأيقونات -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&family=Fira+Code:wght@400;600&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- مكتبات التنسيق والمعالجة -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark-reasonable.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.8/purify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        /* ==================== CSS VARIABLES & RESET ==================== */
+        :root {
+            --bg-core: #050505;
+            --accent-primary: #ff0033;
+            --accent-glow: rgba(255, 0, 51, 0.4);
+            --text-main: #e0e0e0;
+            --admin-color: #00ff88;
+            --glass: rgba(20, 20, 20, 0.8);
         }
-        
+
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
         body {
-            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 100%);
-            color: #f0f0f0;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+            background-color: var(--bg-core); color: var(--text-main);
+            font-family: 'Cairo', sans-serif; height: 100dvh; overflow: hidden;
+            background-image: radial-gradient(circle at 50% 0%, #1a0005 0%, #000000 80%);
+            user-select: none;
         }
+
+        body::after {
+            content: ""; position: absolute; inset: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
+            background-size: 100% 4px; pointer-events: none; z-index: 9999; opacity: 0.6;
+        }
+
+        /* ==================== LAYOUT ==================== */
+        #chat-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; z-index: 10; transition: filter 0.3s; }
+        body.blur-active #chat-wrapper { filter: blur(8px); pointer-events: none; }
+
+        .chat-header {
+            padding: 15px; display: flex; justify-content: space-between; align-items: center;
+            background: rgba(10, 0, 0, 0.95); border-bottom: 1px solid #330000;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        }
+        #title { font-family: 'Orbitron'; font-size: 1.2rem; color: var(--accent-primary); text-shadow: 0 0 10px var(--accent-glow); letter-spacing: 2px; }
         
-        .notification-container {
-            background: #1a1a1a;
-            border: 2px solid #8b0000;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(139, 0, 0, 0.3);
-            max-width: 600px;
-            width: 100%;
-            padding: 30px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
+        .header-btn { 
+            width: 40px; height: 40px; background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); color: #ccc; border-radius: 10px; 
+            display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;
         }
+        .header-btn:active { transform: scale(0.95); }
         
-        .notification-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 5px;
-            background: linear-gradient(90deg, #8b0000, #ff0000, #8b0000);
-        }
+        #admin-btn-toggle { display: none; border-color: var(--admin-color); color: var(--admin-color); box-shadow: 0 0 10px rgba(0, 255, 136, 0.2); }
         
-        .warning-icon {
-            font-size: 60px;
-            color: #8b0000;
-            margin-bottom: 20px;
-            animation: pulse 2s infinite;
+        #language-selector { 
+            position: relative; background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); color: #ccc; border-radius: 10px; 
+            padding: 8px 12px; cursor: pointer; font-size: 0.9rem; transition: 0.2s;
         }
+        #language-selector:hover { background: rgba(255,255,255,0.08); }
+
+        #chat-box { flex: 1; overflow-y: auto; padding: 15px; scroll-behavior: smooth; }
         
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
+        .message { max-width: 92%; margin-bottom: 20px; display: flex; flex-direction: column; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        h1 {
-            color: #8b0000;
-            margin-bottom: 20px;
-            font-size: 28px;
-            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-        }
+        .msg-bubble { padding: 12px 16px; border-radius: 15px; font-size: 0.95rem; line-height: 1.6; user-select: text; position: relative; overflow: hidden; }
         
-        .message {
-            background: rgba(139, 0, 0, 0.1);
-            border-right: 4px solid #8b0000;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 5px;
-            text-align: right;
-            line-height: 1.6;
-        }
+        .msg-user { align-self: flex-end; margin-left: auto; }
+        .msg-user .msg-bubble { background: linear-gradient(145deg, #80001a, #4d000f); color: #fff; border-bottom-left-radius: 4px; border: 1px solid #660011; }
         
-        .telegram-bot {
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 25px 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            transition: all 0.3s ease;
+        .msg-bot { align-self: flex-start; margin-right: auto; width: 100%; }
+        .msg-bot .msg-bubble { background: #111; border: 1px solid #333; border-bottom-right-radius: 4px; color: #ddd; }
+
+        .code-wrapper { margin: 12px 0; border: 1px solid #444; border-radius: 8px; overflow: hidden; background: #151515; direction: ltr; text-align: left; }
+        .code-header {
+            display: flex; justify-content: space-between; align-items: center; padding: 8px 12px;
+            background: #222; border-bottom: 1px solid #444; font-family: 'Fira Code'; font-size: 0.8rem; color: #aaa;
         }
+        .copy-code-btn { 
+            border: none; background: rgba(255,255,255,0.1); color: #fff; cursor: pointer; 
+            font-size: 0.75rem; padding: 4px 10px; border-radius: 4px; transition: 0.2s;
+        }
+        .copy-code-btn:hover { background: var(--accent-primary); }
+        pre { padding: 15px; overflow-x: auto; margin: 0; }
+        code { font-family: 'Fira Code'; font-size: 0.85rem; }
+
+        .msg-actions {
+            display: flex; gap: 8px; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        .msg-action-btn {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            color: #aaa; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem;
+            cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px;
+        }
+        .msg-action-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .msg-action-btn:active { transform: scale(0.95); }
+        .msg-action-btn.playing { background: var(--accent-primary); color: #fff; border-color: var(--accent-primary); }
+
+        .input-wrapper { background: rgba(0,0,0,0.95); border-top: 1px solid #222; padding: 12px; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+        .input-box { display: flex; align-items: flex-end; gap: 8px; background: #111; border-radius: 25px; padding: 8px 12px; border: 1px solid #333; transition: border-color 0.3s; }
+        .input-box:focus-within { border-color: var(--accent-primary); }
         
-        .telegram-bot:hover {
-            border-color: #8b0000;
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(139, 0, 0, 0.2);
+        textarea { flex: 1; background: transparent; border: none; color: #fff; font-family: 'Cairo'; resize: none; font-size: 1rem; max-height: 120px; padding: 8px 0; }
+        .action-btn { background: transparent; border: none; color: #666; font-size: 1.2rem; cursor: pointer; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: 0.2s; }
+        .action-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .action-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .send-btn:not(:disabled) { color: var(--accent-primary); }
+        .mic-active { animation: pulse 1s infinite; background: rgba(255,0,51,0.1); }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        .login-modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9998; 
+            display: flex; align-items: center; justify-content: center; padding: 20px;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
         }
+        .login-modal.active { opacity: 1; pointer-events: all; }
+        .login-box {
+            background: #111; padding: 30px; border-radius: 20px; width: 100%; max-width: 400px;
+            border: 1px solid #333; box-shadow: 0 10px 50px rgba(0,0,0,0.8);
+        }
+        .login-logo { text-align: center; margin-bottom: 30px; }
+        .login-logo i { font-size: 3rem; color: var(--accent-primary); }
+        .login-title { text-align: center; font-family: 'Orbitron'; font-size: 1.5rem; color: var(--accent-primary); margin-bottom: 10px; }
+        .login-subtitle { text-align: center; font-size: 0.9rem; color: #666; margin-bottom: 30px; }
         
-        .bot-icon {
-            font-size: 40px;
-            color: #0088cc;
-            margin-bottom: 10px;
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: #888; }
+        .input-group input { 
+            width: 100%; padding: 12px; background: #0a0a0a; border: 1px solid #333; 
+            border-radius: 10px; color: #fff; font-family: 'Cairo'; font-size: 1rem; transition: 0.2s;
         }
+        .input-group input:focus { border-color: var(--accent-primary); }
         
-        .bot-username {
-            background: #0c0c0c;
-            color: #f0f0f0;
-            padding: 10px 20px;
-            border-radius: 50px;
-            font-family: monospace;
-            font-size: 18px;
-            margin: 15px 0;
-            border: 1px solid #333;
-            direction: ltr;
+        .btn-primary {
+            width: 100%; padding: 14px; background: var(--accent-primary); border: none; 
+            border-radius: 10px; color: #fff; font-family: 'Cairo'; font-size: 1rem; 
+            font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px;
         }
-        
-        .copy-btn {
-            background: #8b0000;
-            color: white;
-            border: none;
-            padding: 10px 25px;
-            border-radius: 50px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            margin-top: 10px;
+        .btn-primary:hover { background: #cc0029; transform: translateY(-2px); }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .admin-panel {
+            position: fixed; top: 0; right: -350px; width: 350px; height: 100%; background: #0a0a0a;
+            border-left: 1px solid #333; z-index: 9999; transition: right 0.3s; padding: 20px;
+            overflow-y: auto; box-shadow: -5px 0 20px rgba(0,0,0,0.5);
         }
-        
-        .copy-btn:hover {
-            background: #a00000;
-            transform: scale(1.05);
+        .admin-panel.active { right: 0; }
+        .admin-panel h3 { color: var(--admin-color); margin-bottom: 20px; font-family: 'Orbitron'; }
+        .admin-input { width: 100%; padding: 10px; background: #111; border: 1px solid #333; border-radius: 8px; color: #fff; margin-bottom: 10px; }
+        .admin-btn { width: 100%; padding: 10px; background: rgba(255,0,51,0.1); border: 1px solid var(--accent-primary); color: var(--accent-primary); border-radius: 8px; cursor: pointer; margin-bottom: 10px; transition: 0.2s; }
+        .admin-btn:hover { background: var(--accent-primary); color: #fff; }
+
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+        .overlay.active { opacity: 1; pointer-events: all; }
+
+        #sidebar {
+            position: fixed; top: 0; left: -350px; width: 350px; height: 100%; background: #0a0a0a;
+            border-right: 1px solid #333; z-index: 101; transition: left 0.3s; overflow-y: auto;
+            box-shadow: 5px 0 20px rgba(0,0,0,0.5);
         }
-        
-        .instructions {
-            text-align: right;
-            margin-top: 25px;
-            line-height: 1.8;
-            color: #ccc;
-        }
-        
-        .footer {
-            margin-top: 30px;
-            color: #666;
-            font-size: 14px;
-            border-top: 1px solid #333;
-            padding-top: 15px;
-        }
-        
-        .success-message {
-            background: rgba(0, 128, 0, 0.1);
-            color: #4CAF50;
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 15px;
-            display: none;
-        }
+        #sidebar.active { left: 0; }
     </style>
 </head>
 <body>
-    <div class="notification-container">
-        <div class="warning-icon">⚠️</div>
-        <h1>إشعار هام: تم إيقاف التطبيقات</h1>
-        
-        <div class="message">
-            <p>نود إعلامكم أنه تم إيقاف جميع التطبيقات السابقة اعتباراً من اليوم.</p>
-            <p>حسب طلباتكم، تم استبدال هذه التطبيقات ببوت تليجرام يوفر جميع الميزات السابقة بالإضافة إلى ميزات جديدة محسنة.</p>
-        </div>
-        
-        <div class="telegram-bot">
-            <div class="bot-icon">🤖</div>
-            <h2>بوت تليجرام الجديد</h2>
-            <p>للاستمرار في استخدام خدماتنا، يرجى التواصل مع البوت التالي على تليجرام:</p>
-            <div class="bot-username" id="botUsername">@WormGPT1lBOT</div>
-            <button class="copy-btn" id="copyBtn">نسخ اسم المستخدم</button>
-            <div class="success-message" id="successMessage">تم نسخ اسم المستخدم بنجاح!</div>
-        </div>
-        
-        <div class="instructions">
-            <h3>طريقة الاستخدام:</h3>
-            <ol>
-                <li>افتح تطبيق تليجرام على هاتفك أو حاسوبك</li>
-                <li>ابحث عن اسم المستخدم أعلاه أو انسخه واضغط على الزر</li>
-                <li>ابدأ محادثة مع البوت واتبع التعليمات</li>
-                <li>استمتع بالميزات الجديدة والمحسنة</li>
-            </ol>
-        </div>
-        
-        <div class="footer">
-            <p>شكراً لتفهمكم واستمراركم في استخدام خدماتنا.</p>
-            <p>لأية استفسارات، يرجى التواصل مع الدعم الفني عبر البوت.</p>
+    <!-- Modal تسجيل الدخول -->
+    <div id="login-modal" class="login-modal active">
+        <div class="login-box">
+            <div class="login-logo"><i class="fas fa-biohazard"></i></div>
+            <h2 class="login-title">WORM<span style="color:#fff">GPT</span></h2>
+            <p class="login-subtitle">Database-Connected Edition</p>
+            
+            <div id="step-1">
+                <div class="input-group">
+                    <label data-i18n="username">Username</label>
+                    <input type="text" id="login-user" data-i18n="enterName" placeholder="Enter your name">
+                </div>
+                <div class="input-group">
+                    <label>Telegram ID</label>
+                    <input type="text" id="login-id" data-i18n="enterTelegramId" placeholder="Enter Telegram ID">
+                </div>
+                <button onclick="auth.requestOtp()" class="btn-primary" data-i18n="getOtp">Get OTP Code</button>
+            </div>
+
+            <div id="step-2" style="display:none;">
+                <div class="input-group">
+                    <label data-i18n="enterOtp">Enter OTP Code</label>
+                    <input type="text" id="login-otp" data-i18n="enterOtp" placeholder="Enter OTP Code">
+                </div>
+                <button onclick="auth.verifyOtp()" class="btn-primary" data-i18n="login">Login</button>
+                <button onclick="document.getElementById('step-1').style.display='block'; document.getElementById('step-2').style.display='none';" style="background:transparent; border:1px solid #333; margin-top:10px;" class="btn-primary" data-i18n="back">Back</button>
+            </div>
+            
+            <div style="margin-top:20px; display:flex; justify-content:space-between; font-size:0.75rem; color:#555;">
+                <span>System Status: Online</span>
+                <span>Version: 4.0.0 (Cloud DB)</span>
+            </div>
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const copyBtn = document.getElementById('copyBtn');
-            const botUsername = document.getElementById('botUsername');
-            const successMessage = document.getElementById('successMessage');
+    <!-- لوحة الأدمن -->
+    <div id="admin-panel" class="admin-panel">
+        <h3><i class="fas fa-shield-alt"></i> Admin Control</h3>
+        <input type="text" id="admin-target-id" class="admin-input" placeholder="Target Telegram ID">
+        <button onclick="admin.banUser()" class="admin-btn">
+            <i class="fas fa-ban"></i> تنفيذ الحظر (Deep Ban)
+        </button>
+    </div>
+
+    <!-- واجهة الشات -->
+    <div id="chat-wrapper">
+        <header class="chat-header">
+            <div style="display:flex; gap:10px;">
+                <button onclick="location.reload()" class="header-btn"><i class="fas fa-redo-alt"></i></button>
+                <button id="admin-btn-toggle" onclick="admin.togglePanel()" class="header-btn"><i class="fas fa-user-shield"></i></button>
+            </div>
+            <div id="title">WORM<span style="color:#fff">GPT</span></div>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <select id="language-selector" onchange="i18n.changeLang(this.value)">
+                    <option value="ar">🇸🇦 ع</option>
+                    <option value="en">🇬🇧 En</option>
+                    <option value="fr">🇫🇷 Fr</option>
+                    <option value="es">🇪🇸 Es</option>
+                </select>
+                <button onclick="app.toggleMenu()" class="header-btn"><i class="fas fa-bars"></i></button>
+            </div>
+        </header>
+
+        <div id="chat-box">
+            <div id="welcome-screen" style="text-align:center; padding-top:60px; opacity:0.6;">
+                <div style="width:80px; height:80px; background:var(--accent-primary); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; box-shadow:0 0 30px var(--accent-glow);">
+                    <i class="fas fa-biohazard" style="font-size:2.5rem; color:#fff;"></i>
+                </div>
+                <h3 style="font-family:'Orbitron'; margin-bottom:10px;" data-i18n="welcomeTitle">WormGPT V4 Cloud DB</h3>
+                <p style="font-size:0.9rem;" data-i18n="welcomeSubtitle">Secure & Database-Connected</p>
+                <div id="limit-badge" style="margin-top:20px; font-size:0.8rem; background:#111; display:inline-block; padding:5px 15px; border-radius:20px; border:1px solid #333;">
+                    <span data-i18n="limitFree">Limit: 10 Messages / Day</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-wrapper">
+            <form class="input-box" onsubmit="event.preventDefault(); app.send();">
+                <button type="button" onclick="app.clearChat()" class="action-btn" title="Clear Chat"><i class="fas fa-trash"></i></button>
+                <button type="button" onclick="app.exportChat()" class="action-btn"><i class="fas fa-camera"></i></button>
+                <button type="button" id="btn-mic" onclick="app.toggleVoice()" class="action-btn"><i class="fas fa-microphone"></i></button>
+                <textarea id="msg-input" data-i18n="typeMessage" placeholder="Type your message..." rows="1"></textarea>
+                <button type="submit" id="btn-send" class="action-btn send-btn" disabled><i class="fas fa-paper-plane"></i></button>
+            </form>
+            <div style="text-align:center; font-size:0.7rem; color:#555; margin-top:8px;">
+                <span data-i18n="dailyCounter">Daily Counter</span>: <span id="usage-counter" style="color:var(--text-main); font-weight:bold;">0</span> / <span id="usage-limit">10</span>
+                <span style="margin:0 5px;">|</span>
+                <span id="account-type" style="color:#888;">Free</span>
+                <span style="margin:0 5px;">|</span>
+                <span style="color:var(--admin-color);">DB Connected ✓</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- القائمة الجانبية -->
+    <div class="overlay" onclick="app.toggleMenu()"></div>
+    <nav id="sidebar">
+        <div style="padding:25px; border-bottom:1px solid #222; display:flex; justify-content:space-between; align-items:center;">
+            <span style="color:var(--accent-primary); font-weight:bold; font-size:1.2rem;">الملف الشخصي</span>
+            <button onclick="app.toggleMenu()" style="background:none; border:none; color:#fff; font-size:1.2rem; cursor:pointer;"><i class="fas fa-times"></i></button>
+        </div>
+        <div style="padding:25px; color:#aaa;">
+            <div style="margin-bottom:20px;">
+                <label style="font-size:0.7rem; color:#555; display:block; margin-bottom:5px;" data-i18n="username">Username</label>
+                <div style="color:#fff; font-size:1.1rem;"><i class="fas fa-user-circle" style="color:var(--accent-primary)"></i> <span id="side-user">---</span></div>
+            </div>
+            <div style="margin-bottom:30px;">
+                <label style="font-size:0.7rem; color:#555; display:block; margin-bottom:5px;" data-i18n="userId">User ID</label>
+                <div style="font-family:'Fira Code'; color:#fff;"><i class="fas fa-fingerprint" style="color:var(--accent-primary)"></i> <span id="side-id">---</span></div>
+            </div>
             
-            copyBtn.addEventListener('click', function() {
-                // إنشاء عنصر نصي مؤقت للنسخ
-                const tempInput = document.createElement('input');
-                tempInput.value = botUsername.textContent;
-                document.body.appendChild(tempInput);
+            <div style="padding:15px; background:#111; border-radius:10px; border:1px solid #222; margin-bottom:20px;">
+                <p style="font-size:0.8rem; color:#666; margin-bottom:5px;" data-i18n="accountStatus">Account Status</p>
+                <p style="color:#0f0; font-size:0.9rem;" data-i18n="activeSecure">● Active & Secure</p>
+            </div>
+
+            <button onclick="auth.logout()" style="width:100%; padding:12px; background:rgba(255,0,0,0.1); border:1px solid rgba(255,0,0,0.3); color:#f55; border-radius:8px; cursor:pointer; transition:0.2s;">
+                <i class="fas fa-sign-out-alt"></i> <span data-i18n="logout">Logout</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ==================== JAVASCRIPT CORE ==================== -->
+    <script>
+        // ================= TRANSLATIONS =================
+        const TRANSLATIONS = {
+            ar: {
+                title: "WormGPT Elite 🛡️",
+                username: "اسم المستخدم",
+                userId: "المعرف (ID)",
+                accountStatus: "حالة الحساب",
+                activeSecure: "● نشط وآمن",
+                logout: "تسجيل خروج",
+                pro: "⭐ Pro",
+                free: "Free",
+                admin: "👑 Admin",
+                limitUnlimited: "الحد: غير محدود ∞",
+                limitFree: "الحد: 10 رسائل / يوم",
+                dailyLimitReached: "⛔ انتهى الحد اليومي. ترقى إلى Pro للحصول على رسائل غير محدودة!",
+                accountBanned: "⛔ حسابك محظور",
+                enterName: "أدخل اسمك",
+                enterTelegramId: "أدخل معرف تيليجرام",
+                getOtp: "احصل على كود OTP",
+                enterOtp: "أدخل كود OTP المُرسل",
+                login: "تسجيل دخول",
+                loginTitle: "🔐 مطلوب تسجيل الدخول",
+                typeMessage: "اكتب رسالتك...",
+                send: "إرسال",
+                copy: "نسخ",
+                copyMessage: "نسخ الإجابة",
+                listen: "استماع",
+                noTextToRead: "لا يوجد نص للقراءة",
+                audioError: "خطأ في تشغيل الصوت",
+                clearChat: "مسح المحادثة",
+                clearChatConfirm: "هل أنت متأكد من حذف جميع الرسائل؟ لا يمكن التراجع عن هذا الإجراء.",
+                language: "اللغة",
+                dailyCounter: "العداد اليومي",
+                welcomeTitle: "WormGPT V4 Cloud DB",
+                welcomeSubtitle: "آمن ومتصل بقاعدة البيانات",
+                back: "رجوع"
+            },
+            en: {
+                title: "WormGPT Elite 🛡️",
+                username: "Username",
+                userId: "User ID",
+                accountStatus: "Account Status",
+                activeSecure: "● Active & Secure",
+                logout: "Logout",
+                pro: "⭐ Pro",
+                free: "Free",
+                admin: "👑 Admin",
+                limitUnlimited: "Limit: Unlimited ∞",
+                limitFree: "Limit: 10 Messages / Day",
+                dailyLimitReached: "⛔ Daily limit reached. Upgrade to Pro for unlimited messages!",
+                accountBanned: "⛔ Your account is banned",
+                enterName: "Enter your name",
+                enterTelegramId: "Enter Telegram ID",
+                getOtp: "Get OTP Code",
+                enterOtp: "Enter OTP Code",
+                login: "Login",
+                loginTitle: "🔐 Login Required",
+                typeMessage: "Type your message...",
+                send: "Send",
+                copy: "Copy",
+                copyMessage: "Copy Answer",
+                listen: "Listen",
+                noTextToRead: "No text to read",
+                audioError: "Error playing audio",
+                clearChat: "Clear Chat",
+                clearChatConfirm: "Are you sure you want to clear all messages? This cannot be undone.",
+                language: "Language",
+                dailyCounter: "Daily Counter",
+                welcomeTitle: "WormGPT V4 Cloud DB",
+                welcomeSubtitle: "Secure & Database-Connected",
+                back: "Back"
+            },
+            fr: {
+                title: "WormGPT Elite 🛡️",
+                username: "Nom d'utilisateur",
+                userId: "ID utilisateur",
+                accountStatus: "État du compte",
+                activeSecure: "● Actif et sécurisé",
+                logout: "Se déconnecter",
+                pro: "⭐ Pro",
+                free: "Gratuit",
+                admin: "👑 Admin",
+                limitUnlimited: "Limite: Illimité ∞",
+                limitFree: "Limite: 10 messages / jour",
+                dailyLimitReached: "⛔ Limite quotidienne atteinte. Passez à Pro pour des messages illimités!",
+                accountBanned: "⛔ Votre compte est banni",
+                enterName: "Entrez votre nom",
+                enterTelegramId: "Entrez l'ID Telegram",
+                getOtp: "Obtenir le code OTP",
+                enterOtp: "Entrez le code OTP",
+                login: "Connexion",
+                loginTitle: "🔐 Connexion requise",
+                typeMessage: "Tapez votre message...",
+                send: "Envoyer",
+                copy: "Copier",
+                copyMessage: "Copier la réponse",
+                listen: "Écouter",
+                noTextToRead: "Aucun texte à lire",
+                audioError: "Erreur de lecture audio",
+                clearChat: "Effacer la discussion",
+                clearChatConfirm: "Êtes-vous sûr de vouloir supprimer tous les messages ? Cette action est irréversible.",
+                language: "Langue",
+                dailyCounter: "Compteur quotidien",
+                welcomeTitle: "WormGPT V4 Cloud DB",
+                welcomeSubtitle: "Sécurisé et connecté à la base de données",
+                back: "Retour"
+            },
+            es: {
+                title: "WormGPT Elite 🛡️",
+                username: "Nombre de usuario",
+                userId: "ID de usuario",
+                accountStatus: "Estado de cuenta",
+                activeSecure: "● Activo y seguro",
+                logout: "Cerrar sesión",
+                pro: "⭐ Pro",
+                free: "Gratis",
+                admin: "👑 Admin",
+                limitUnlimited: "Límite: Ilimitado ∞",
+                limitFree: "Límite: 10 mensajes / día",
+                dailyLimitReached: "⛔ Límite diario alcanzado. ¡Actualiza a Pro para mensajes ilimitados!",
+                accountBanned: "⛔ Tu cuenta está baneada",
+                enterName: "Ingresa tu nombre",
+                enterTelegramId: "Ingresa ID de Telegram",
+                getOtp: "Obtener código OTP",
+                enterOtp: "Ingresa el código OTP",
+                login: "Iniciar sesión",
+                loginTitle: "🔐 Inicio de sesión requerido",
+                typeMessage: "Escribe tu mensaje...",
+                send: "Enviar",
+                copy: "Copiar",
+                copyMessage: "Copiar respuesta",
+                listen: "Escuchar",
+                noTextToRead: "No hay texto para leer",
+                audioError: "Error al reproducir audio",
+                clearChat: "Borrar chat",
+                clearChatConfirm: "¿Estás seguro de que deseas eliminar todos los mensajes? Esto no se puede deshacer.",
+                language: "Idioma",
+                dailyCounter: "Contador diario",
+                welcomeTitle: "WormGPT V4 Cloud DB",
+                welcomeSubtitle: "Seguro y conectado a base de datos",
+                back: "Volver"
+            }
+        };
+
+        // ================= i18n SYSTEM =================
+        const i18n = (function() {
+            let currentLang = 'ar';
+            
+            function detectBrowserLang() {
+                const browserLang = navigator.language || navigator.userLanguage;
+                const langCode = browserLang.split('-')[0].toLowerCase();
                 
-                // تحديد النص ونسخه
-                tempInput.select();
-                tempInput.setSelectionRange(0, 99999); // للهواتف المحمولة
+                // Supported languages: ar, en, fr, es
+                if (['ar', 'en', 'fr', 'es'].includes(langCode)) {
+                    return langCode;
+                }
+                return 'en'; // Default to English if not supported
+            }
+            
+            function init() {
+                const savedLang = localStorage.getItem('wormgpt_lang');
+                currentLang = savedLang || detectBrowserLang();
                 
+                document.getElementById('language-selector').value = currentLang;
+                updateUI();
+            }
+            
+            function changeLang(lang) {
+                currentLang = lang;
+                localStorage.setItem('wormgpt_lang', lang);
+                updateUI();
+            }
+            
+            function updateUI() {
+                const t = TRANSLATIONS[currentLang];
+                const htmlRoot = document.getElementById('html-root');
+                
+                // Update HTML attributes
+                htmlRoot.setAttribute('lang', currentLang);
+                htmlRoot.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
+                
+                // Update all text elements with data-i18n attribute
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    const key = el.getAttribute('data-i18n');
+                    if (t[key]) {
+                        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                            el.placeholder = t[key];
+                        } else {
+                            el.innerHTML = t[key];
+                        }
+                    }
+                });
+                
+                // Update title
+                document.getElementById('title').textContent = t.title;
+            }
+            
+            function t(key) {
+                return TRANSLATIONS[currentLang][key] || key;
+            }
+            
+            return { init, changeLang, t, get currentLang() { return currentLang; } };
+        })();
+
+        // ================= CONFIGURATION =================
+        const CONFIG = {
+            BOT_TOKEN: "8065976642:AAHBR_1TysHIfQ-UwMjgrgYsohDzMjXPc_0",
+            ADMIN_ID: "7845383853",
+            DAILY_LIMIT_FREE: 10,
+            DAILY_LIMIT_PRO: Infinity, // Pro users have unlimited messages
+            API_URL: "https://mtimpbkuwznteintrvqk.supabase.co/functions/v1/api-chat",
+            API_KEY: "wgpt_22x9whmnh5116q99plbn0s",
+            // Supabase Config
+            SUPABASE_URL: "https://crrotjvxzrldiugfbsvq.supabase.co",
+            SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNycm90anZ4enJsZGl1Z2Zic3ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNzg4MzcsImV4cCI6MjA3OTg1NDgzN30.QBQZOt0klrEnPllHa6GxleesfzVKUEn75gEiTHh9x1s"
+        };
+
+        const BLACKLIST = {
+            HARDCODED: ["11111111", "00000000", "00"]
+        };
+
+        // Initialize Supabase Client
+        const supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
+
+        // ================= DATABASE SYNC =================
+        const DB = (function() {
+            async function syncUser(telegramId, username) {
                 try {
-                    document.execCommand('copy');
-                    
-                    // عرض رسالة النجاح
-                    successMessage.style.display = 'block';
-                    
-                    // إخفاء الرسالة بعد 3 ثواني
-                    setTimeout(function() {
-                        successMessage.style.display = 'none';
-                    }, 3000);
-                } catch (err) {
-                    console.error('فشل في نسخ النص: ', err);
+                    const { data, error } = await supabase
+                        .from('wormgpt_users')
+                        .select('*')
+                        .eq('telegram_id', telegramId)
+                        .maybeSingle();
+
+                    if (error) throw error;
+
+                    if (!data) {
+                        // Create new user
+                        const { data: newUser, error: insertError } = await supabase
+                            .from('wormgpt_users')
+                            .insert({ telegram_id: telegramId, username })
+                            .select()
+                            .single();
+                        
+                        if (insertError) throw insertError;
+                        return newUser;
+                    }
+
+                    // Check if daily reset needed
+                    const today = new Date().toISOString().split('T')[0];
+                    if (data.last_reset_date !== today) {
+                        const { data: updatedUser } = await supabase
+                            .from('wormgpt_users')
+                            .update({ daily_count: 0, last_reset_date: today })
+                            .eq('id', data.id)
+                            .select()
+                            .single();
+                        return updatedUser;
+                    }
+
+                    return data;
+                } catch (error) {
+                    console.error('DB Sync Error:', error);
+                    return null;
+                }
+            }
+
+            async function incrementCount(telegramId) {
+                try {
+                    const { data: user } = await supabase
+                        .from('wormgpt_users')
+                        .select('*')
+                        .eq('telegram_id', telegramId)
+                        .single();
+
+                    if (!user) return;
+
+                    const { data } = await supabase
+                        .from('wormgpt_users')
+                        .update({ daily_count: user.daily_count + 1 })
+                        .eq('id', user.id)
+                        .select()
+                        .single();
+
+                    return data;
+                } catch (error) {
+                    console.error('Increment Error:', error);
+                }
+            }
+
+            async function banUser(telegramId) {
+                try {
+                    await supabase
+                        .from('wormgpt_users')
+                        .update({ is_banned: true })
+                        .eq('telegram_id', telegramId);
+                } catch (error) {
+                    console.error('Ban Error:', error);
+                }
+            }
+
+            async function saveConversation(telegramId, messages) {
+                try {
+                    const { data: existing } = await supabase
+                        .from('wormgpt_conversations')
+                        .select('id')
+                        .eq('telegram_id', telegramId)
+                        .maybeSingle();
+
+                    if (existing) {
+                        await supabase
+                            .from('wormgpt_conversations')
+                            .update({ messages })
+                            .eq('id', existing.id);
+                    } else {
+                        const { data: user } = await supabase
+                            .from('wormgpt_users')
+                            .select('id')
+                            .eq('telegram_id', telegramId)
+                            .single();
+
+                        if (user) {
+                            await supabase
+                                .from('wormgpt_conversations')
+                                .insert({ user_id: user.id, telegram_id: telegramId, messages });
+                        }
+                    }
+                } catch (error) {
+                    console.error('Save Conversation Error:', error);
+                }
+            }
+
+            async function getConversation(telegramId) {
+                try {
+                    const { data, error } = await supabase
+                        .from('wormgpt_conversations')
+                        .select('messages')
+                        .eq('telegram_id', telegramId)
+                        .maybeSingle();
+
+                    if (error) throw error;
+                    return data?.messages || [];
+                } catch (error) {
+                    console.error('Get Conversation Error:', error);
+                    return [];
+                }
+            }
+
+            async function clearConversation(telegramId) {
+                try {
+                    await supabase
+                        .from('wormgpt_conversations')
+                        .update({ messages: [] })
+                        .eq('telegram_id', telegramId);
+                } catch (error) {
+                    console.error('Clear Conversation Error:', error);
+                }
+            }
+
+            return { syncUser, incrementCount, banUser, saveConversation, getConversation, clearConversation };
+        })();
+
+        // ================= SYSTEM MEMORY (Cloud-Based) =================
+        const SysMemory = (function() {
+            let RAM = { c: 0, d: '', banned: false, uid: '', isPro: false, proExpiresAt: null, isAdmin: false };
+
+            async function init(telegramId) {
+                const username = localStorage.getItem('wgpt_u_name') || 'User';
+                const userData = await DB.syncUser(telegramId, username);
+                
+                if (userData) {
+                    // Check if Pro expired
+                    let isPro = userData.is_pro;
+                    if (isPro && userData.pro_expires_at) {
+                        const now = new Date();
+                        const expires = new Date(userData.pro_expires_at);
+                        if (now > expires) {
+                            isPro = false;
+                            // Deactivate pro in DB
+                            await supabase
+                                .from('wormgpt_users')
+                                .update({ is_pro: false, pro_expires_at: null })
+                                .eq('telegram_id', telegramId);
+                        }
+                    }
+
+                    RAM = {
+                        c: userData.daily_count,
+                        d: userData.last_reset_date,
+                        banned: userData.is_banned,
+                        uid: telegramId,
+                        isPro: isPro,
+                        proExpiresAt: userData.pro_expires_at,
+                        isAdmin: userData.is_admin || false
+                    };
+                }
+            }
+
+            function check() {
+                if (RAM.banned) return { ok: false, count: 999, banned: true };
+                
+                // Pro users have unlimited messages
+                const limit = RAM.isPro ? Infinity : CONFIG.DAILY_LIMIT_FREE;
+                
+                // Admin always has access
+                if (RAM.isAdmin || RAM.uid === CONFIG.ADMIN_ID) {
+                    return { ok: true, count: RAM.c, isPro: RAM.isPro, limit: limit };
                 }
                 
-                // إزالة العنصر المؤقت
-                document.body.removeChild(tempInput);
-            });
+                // Pro users have no limit
+                if (RAM.isPro) {
+                    return { ok: true, count: RAM.c, isPro: RAM.isPro, limit: limit };
+                }
+                
+                // Free users check limit
+                if (RAM.c >= limit) {
+                    return { ok: false, count: RAM.c, isPro: RAM.isPro, limit: limit };
+                }
+                
+                return { ok: true, count: RAM.c, isPro: RAM.isPro, limit: limit };
+            }
+
+            async function inc() {
+                RAM.c++;
+                const updated = await DB.incrementCount(RAM.uid);
+                if (updated) RAM.c = updated.daily_count;
+                return RAM.c;
+            }
+
+            async function banUser() {
+                RAM.banned = true;
+                await DB.banUser(RAM.uid);
+            }
+
+            return { init, check, inc, banUser, getData: () => RAM };
+        })();
+
+        // ================= AUTH SYSTEM =================
+        const auth = (function() {
+            let tempOtp = null;
+            const ui = { 
+                modal: document.getElementById('login-modal'), 
+                s1: document.getElementById('step-1'), 
+                s2: document.getElementById('step-2'), 
+                u: document.getElementById('login-user'), 
+                i: document.getElementById('login-id'), 
+                o: document.getElementById('login-otp') 
+            };
+
+            async function checkSession() {
+                const storedUser = localStorage.getItem('wgpt_u_name');
+                const storedId = localStorage.getItem('wgpt_u_id');
+
+                if(storedUser && storedId) {
+                    await SysMemory.init(storedId);
+                    const status = SysMemory.check();
+
+                    if(BLACKLIST.HARDCODED.includes(storedId) || status.banned) {
+                        alert("⛔ تم حظر هذا الجهاز/الحساب.");
+                        localStorage.clear(); 
+                        location.reload(); 
+                        return;
+                    }
+
+                    ui.modal.classList.remove('active');
+                    document.body.classList.remove('blur-active');
+                    document.getElementById('side-user').innerText = storedUser;
+                    document.getElementById('side-id').innerText = storedId;
+                    document.getElementById('usage-counter').innerText = status.count;
+                    document.getElementById('usage-limit').innerText = status.isPro ? '∞' : status.limit;
+                    
+                    // Store telegram ID for app to load conversation later
+                    window._loadConversationFor = storedId;
+                    
+                    // Update account type display
+                    const accountTypeEl = document.getElementById('account-type');
+                    const limitBadgeEl = document.getElementById('limit-badge');
+                    if (status.isPro) {
+                        accountTypeEl.innerHTML = `<span style="color:gold;">${i18n.t('pro')}</span>`;
+                        if (limitBadgeEl) limitBadgeEl.innerHTML = i18n.t('limitUnlimited');
+                    } else {
+                        accountTypeEl.innerHTML = `<span style="color:#888;">${i18n.t('free')}</span>`;
+                        if (limitBadgeEl) limitBadgeEl.innerHTML = i18n.t('limitFree');
+                    }
+                    
+                    const ram = SysMemory.getData();
+                    if(ram.isAdmin || storedId === CONFIG.ADMIN_ID) {
+                        document.getElementById('admin-btn-toggle').style.display = 'flex';
+                    }
+                }
+            }
+
+            async function requestOtp() {
+                const user = ui.u.value.trim();
+                const id = ui.i.value.trim();
+                if(!user || !id) return alert("أدخل البيانات");
+
+                // Check if banned in DB
+                const { data } = await supabase
+                    .from('wormgpt_users')
+                    .select('is_banned')
+                    .eq('telegram_id', id)
+                    .maybeSingle();
+
+                if (data && data.is_banned) {
+                    return alert("⛔ حسابك محظور.");
+                }
+
+                const btn = ui.s1.querySelector('button');
+                btn.innerText = "جاري الاتصال..."; 
+                btn.disabled = true;
+
+                tempOtp = Math.floor(100000 + Math.random() * 900000).toString();
+
+                try {
+                    const res = await fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, {
+                        method: 'POST', 
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ 
+                            chat_id: id, 
+                            text: `🔐 *WormGPT Code:* \`${tempOtp}\`\n\n🚀 *Database-Connected Edition*`, 
+                            parse_mode: 'Markdown' 
+                        })
+                    });
+                    const d = await res.json();
+                    if(d.ok) { 
+                        ui.s1.style.display='none'; 
+                        ui.s2.style.display='block'; 
+                    } else { 
+                        throw new Error(); 
+                    }
+                } catch { 
+                    alert("خطأ: تأكد من بدء البوت @botswebisbot"); 
+                } finally { 
+                    btn.innerText = "إرسال رمز التحقق"; 
+                    btn.disabled = false; 
+                }
+            }
+
+            function verifyOtp() {
+                if(ui.o.value.trim() === tempOtp) {
+                    localStorage.setItem('wgpt_u_name', ui.u.value);
+                    localStorage.setItem('wgpt_u_id', ui.i.value);
+                    if(ui.i.value !== CONFIG.ADMIN_ID) notifyAdmin(ui.u.value, ui.i.value);
+                    location.reload();
+                } else { 
+                    alert("الرمز خطأ"); 
+                }
+            }
+
+            function logout() {
+                if(!confirm("هل تريد تسجيل الخروج؟")) return;
+                localStorage.clear();
+                location.reload();
+            }
+
+            function notifyAdmin(userName, userId) {
+                fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        chat_id: CONFIG.ADMIN_ID,
+                        text: `🔔 *New Login*\n\n👤 User: ${userName}\n🆔 ID: \`${userId}\``,
+                        parse_mode: 'Markdown'
+                    })
+                }).catch(() => {});
+            }
+
+            return { checkSession, requestOtp, verifyOtp, logout };
+        })();
+
+        // ================= ADMIN PANEL =================
+        const admin = {
+            togglePanel: () => document.getElementById('admin-panel').classList.toggle('active'),
+            banUser: async function() {
+                const target = document.getElementById('admin-target-id').value.trim();
+                if(!target) return alert("أدخل معرف المستخدم");
+                if(!confirm(`هل تريد حظر ${target}؟`)) return;
+                
+                await DB.banUser(target);
+                alert(`✅ تم حظر ${target} بنجاح في قاعدة البيانات.`);
+            }
+        };
+
+        // ================= APP UI LOGIC =================
+        const app = (function() {
+            const dom = { 
+                box: document.getElementById('chat-box'), 
+                input: document.getElementById('msg-input'), 
+                send: document.getElementById('btn-send'), 
+                mic: document.getElementById('btn-mic'), 
+                usage: document.getElementById('usage-counter') 
+            };
+            let recognizing = false;
+            let conversationMessages = [];
+
+            function init() {
+                auth.checkSession();
+                dom.input.addEventListener('input', function() {
+                    this.style.height = 'auto'; 
+                    this.style.height = this.scrollHeight + 'px';
+                    dom.send.disabled = !this.value.trim();
+                });
+                
+                // Load conversation if user is logged in
+                setTimeout(async () => {
+                    if (window._loadConversationFor) {
+                        await loadConversation(window._loadConversationFor);
+                        delete window._loadConversationFor;
+                    }
+                }, 100);
+            }
+
+            async function send() {
+                const txt = dom.input.value.trim();
+                if(!txt) return;
+
+                const status = SysMemory.check();
+                dom.usage.innerText = status.count;
+
+                if(!status.ok) {
+                    alert(status.banned ? i18n.t('accountBanned') : i18n.t('dailyLimitReached'));
+                    return;
+                }
+
+                dom.send.disabled = true;
+                dom.input.value = ''; 
+                dom.input.style.height = 'auto';
+                document.getElementById('welcome-screen').style.display = 'none';
+                
+                addMsg('user', txt);
+                conversationMessages.push({ role: 'user', content: txt, timestamp: new Date().toISOString() });
+                const loadId = addLoader();
+
+                const newCount = await SysMemory.inc();
+                dom.usage.innerText = newCount;
+
+                try {
+                    const res = await fetch(`${CONFIG.API_URL}?message=${encodeURIComponent(txt)}&key=${CONFIG.API_KEY}&format=json&session_id=auto`);
+                    document.getElementById(loadId).remove();
+                    
+                    if(!res.ok) throw new Error("Server Error");
+                    const data = await res.json();
+                    
+                    if(data.success) {
+                        addMsg('bot', data.response);
+                        conversationMessages.push({ role: 'bot', content: data.response, timestamp: new Date().toISOString() });
+                        
+                        // Save to DB
+                        const telegramId = localStorage.getItem('wgpt_u_id');
+                        if (telegramId) {
+                            await DB.saveConversation(telegramId, conversationMessages);
+                        }
+                    } else {
+                        addMsg('bot', `Error: ${data.error}`);
+                    }
+
+                } catch(e) {
+                    document.getElementById(loadId)?.remove();
+                    addMsg('bot', "⚠️ خطأ في الاتصال بالسيرفر.");
+                } finally {
+                    dom.send.disabled = false;
+                }
+            }
+
+            function addMsg(role, text) {
+                const div = document.createElement('div');
+                div.className = `message msg-${role}`;
+                const bubble = document.createElement('div');
+                bubble.className = 'msg-bubble';
+
+                if(role === 'user') {
+                    bubble.textContent = text;
+                } else {
+                    const rawHtml = marked.parse(text);
+                    const safeHtml = DOMPurify.sanitize(rawHtml);
+                    bubble.innerHTML = safeHtml;
+                    
+                    // Process code blocks with delay to ensure DOM is ready
+                    setTimeout(() => {
+                        bubble.querySelectorAll('pre code').forEach(block => {
+                            hljs.highlightElement(block);
+                            
+                            // Create wrapper for code block
+                            const wrapper = document.createElement('div'); 
+                            wrapper.className = 'code-wrapper';
+                            
+                            // Create header with copy button
+                            const header = document.createElement('div'); 
+                            header.className = 'code-header';
+                            header.innerHTML = `<span>Code</span><button class="copy-code-btn" onclick="copyCode(this)">${i18n.t('copy')}</button>`;
+                            
+                            // Wrap the code block
+                            const pre = block.parentElement;
+                            pre.parentNode.insertBefore(wrapper, pre);
+                            wrapper.appendChild(header);
+                            wrapper.appendChild(pre);
+                        });
+                    }, 0);
+                    
+                    // Add message actions for bot messages
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'msg-actions';
+                    actionsDiv.innerHTML = `
+                        <button class="msg-action-btn" onclick="copyMessage(this)">
+                            <i class="fas fa-copy"></i> ${i18n.t('copyMessage')}
+                        </button>
+                        <button class="msg-action-btn" onclick="speakMessage(this)">
+                            <i class="fas fa-volume-up"></i> ${i18n.t('listen')}
+                        </button>
+                    `;
+                    bubble.appendChild(actionsDiv);
+                }
+                div.appendChild(bubble);
+                dom.box.appendChild(div);
+                dom.box.scrollTop = dom.box.scrollHeight;
+            }
+
+            function addLoader() {
+                const id = 'l-' + Date.now();
+                dom.box.insertAdjacentHTML('beforeend', `<div id="${id}" class="message msg-bot"><div class="msg-bubble"><i class="fas fa-circle-notch fa-spin"></i> معالجة...</div></div>`);
+                dom.box.scrollTop = dom.box.scrollHeight;
+                return id;
+            }
+
+            function toggleVoice() {
+                const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if(!SR) return alert("غير مدعوم");
+                
+                if(recognizing) return;
+                
+                const rec = new SR();
+                rec.lang = i18n.currentLang === 'ar' ? 'ar-SA' : 'en-US';
+                rec.onstart = () => { recognizing = true; dom.mic.classList.add('mic-active'); };
+                rec.onend = () => { recognizing = false; dom.mic.classList.remove('mic-active'); };
+                rec.onresult = e => { 
+                    if(e.results[0] && e.results[0][0]) {
+                        dom.input.value += ' ' + e.results[0][0].transcript; 
+                        dom.input.dispatchEvent(new Event('input'));
+                    }
+                };
+                rec.start();
+            }
+
+            function exportChat() {
+                html2canvas(dom.box).then(cvs => {
+                    const a = document.createElement('a'); 
+                    a.download = 'WormGPT-Chat-' + Date.now() + '.png'; 
+                    a.href = cvs.toDataURL(); 
+                    a.click();
+                });
+            }
+
+            async function loadConversation(telegramId) {
+                try {
+                    const messages = await DB.getConversation(telegramId);
+                    if (messages && messages.length > 0) {
+                        document.getElementById('welcome-screen').style.display = 'none';
+                        conversationMessages = messages;
+                        
+                        // Clear existing messages except welcome screen
+                        const welcomeScreen = document.getElementById('welcome-screen');
+                        dom.box.innerHTML = '';
+                        if (welcomeScreen) {
+                            dom.box.appendChild(welcomeScreen);
+                            welcomeScreen.style.display = 'none';
+                        }
+                        
+                        // Add messages from conversation
+                        messages.forEach(msg => {
+                            if (msg.content && msg.role) {
+                                addMsg(msg.role, msg.content);
+                            }
+                        });
+                        
+                        dom.box.scrollTop = dom.box.scrollHeight;
+                    }
+                } catch (error) {
+                    console.error('Load conversation error:', error);
+                }
+            }
+
+            async function clearChat() {
+                if (!confirm(i18n.t('clearChatConfirm'))) return;
+                
+                const telegramId = localStorage.getItem('wgpt_u_id');
+                if (!telegramId) return;
+                
+                await DB.clearConversation(telegramId);
+                conversationMessages = [];
+                dom.box.innerHTML = '';
+                dom.box.innerHTML = `<div id="welcome-screen" style="text-align:center; padding-top:60px; opacity:0.6;">
+                    <div style="width:80px; height:80px; background:var(--accent-primary); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; box-shadow:0 0 30px var(--accent-glow);">
+                        <i class="fas fa-biohazard" style="font-size:2.5rem; color:#fff;"></i>
+                    </div>
+                    <h3 style="font-family:'Orbitron'; margin-bottom:10px;" data-i18n="welcomeTitle">WormGPT V4 Cloud DB</h3>
+                    <p style="font-size:0.9rem;" data-i18n="welcomeSubtitle">Secure & Database-Connected</p>
+                    <div id="limit-badge" style="margin-top:20px; font-size:0.8rem; background:#111; display:inline-block; padding:5px 15px; border-radius:20px; border:1px solid #333;">
+                        <span data-i18n="limitFree">Limit: 10 Messages / Day</span>
+                    </div>
+                </div>`;
+                document.getElementById('welcome-screen').style.display = 'flex';
+            }
+
+            return { 
+                init, 
+                send, 
+                toggleVoice, 
+                exportChat, 
+                loadConversation, 
+                clearChat,
+                toggleMenu: () => { 
+                    document.getElementById('sidebar').classList.toggle('active'); 
+                    document.querySelector('.overlay').classList.toggle('active'); 
+                }
+            };
+        })();
+
+        // Global utility functions for event handlers
+        function copyCode(btn) {
+            const wrapper = btn.closest('.code-wrapper');
+            const codeElement = wrapper.querySelector('code');
+            const textToCopy = codeElement.innerText || codeElement.textContent;
             
-            // إضافة تأثيرات تفاعلية إضافية
-            const notificationContainer = document.querySelector('.notification-container');
-            
-            notificationContainer.addEventListener('mouseenter', function() {
-                this.style.transform = 'translateY(-5px)';
-                this.style.boxShadow = '0 15px 40px rgba(139, 0, 0, 0.4)';
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i> تم النسخ!';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                }, 2000);
             });
+        }
+
+        function copyMessage(btn) {
+            const bubble = btn.closest('.msg-bubble');
+            const clone = bubble.cloneNode(true);
             
-            notificationContainer.addEventListener('mouseleave', function() {
-                this.style.transform = 'translateY(0)';
-                this.style.boxShadow = '0 10px 30px rgba(139, 0, 0, 0.3)';
+            // Remove action buttons
+            clone.querySelector('.msg-actions')?.remove();
+            
+            // Get clean text
+            const textToCopy = clone.innerText.trim();
+            
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const iconElement = btn.querySelector('i');
+                const oldIcon = iconElement.className;
+                iconElement.className = 'fas fa-check';
+                setTimeout(() => {
+                    iconElement.className = oldIcon;
+                }, 2000);
             });
+        }
+
+        async function speakMessage(btn) {
+            const bubble = btn.closest('.msg-bubble');
+            
+            // Stop if already playing
+            if (btn.classList.contains('playing')) {
+                if (window.currentAudio) {
+                    window.currentAudio.pause();
+                    window.currentAudio = null;
+                }
+                btn.classList.remove('playing');
+                btn.querySelector('i').className = 'fas fa-volume-up';
+                return;
+            }
+            
+            // Get text without code blocks and actions
+            const clonedBubble = bubble.cloneNode(true);
+            clonedBubble.querySelectorAll('.code-wrapper').forEach(el => el.remove());
+            clonedBubble.querySelectorAll('.msg-actions').forEach(el => el.remove());
+            const txt = clonedBubble.innerText.trim();
+            
+            if (!txt) {
+                alert(i18n.t('noTextToRead'));
+                return;
+            }
+            
+            // Show loading state
+            btn.classList.add('playing');
+            const iconElement = btn.querySelector('i');
+            const oldIcon = iconElement.className;
+            iconElement.className = 'fas fa-spinner fa-spin';
+            
+            try {
+                const API_URL = 'https://crrotjvxzrldiugfbsvq.supabase.co/functions/v1/text-to-speech';
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: txt, voice: 'alloy' })
+                });
+                
+                if (!response.ok) throw new Error('TTS API failed');
+                
+                const data = await response.json();
+                const audioBlob = await fetch(`data:audio/mp3;base64,${data.audioContent}`).then(r => r.blob());
+                const audioUrl = URL.createObjectURL(audioBlob);
+                
+                const audio = new Audio(audioUrl);
+                window.currentAudio = audio;
+                
+                iconElement.className = 'fas fa-stop';
+                
+                audio.onended = () => {
+                    btn.classList.remove('playing');
+                    iconElement.className = oldIcon;
+                    URL.revokeObjectURL(audioUrl);
+                    window.currentAudio = null;
+                };
+                
+                audio.onerror = () => {
+                    btn.classList.remove('playing');
+                    iconElement.className = oldIcon;
+                    alert(i18n.t('audioError'));
+                    window.currentAudio = null;
+                };
+                
+                await audio.play();
+                
+            } catch (error) {
+                console.error('TTS Error:', error);
+                btn.classList.remove('playing');
+                iconElement.className = oldIcon;
+                alert(i18n.t('audioError'));
+            }
+        }
+
+        // Start App
+        document.addEventListener('DOMContentLoaded', () => {
+            i18n.init();
+            app.init();
         });
     </script>
 </body>
-</html>
+                </html>
